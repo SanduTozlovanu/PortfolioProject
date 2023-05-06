@@ -3,11 +3,11 @@ from abc import ABC
 import requests
 from sqlalchemy.exc import OperationalError
 
-from DataCollector.Commands.Command import Command
-from DataCollector.Database.Models.LatestNew import LatestNew
-from DataCollector.Database.session import db
-from DataCollector.config.constants import API_ENDPOINT, TEN_MINUTES
-from DataCollector.config.definitions import KEY_URL
+from publicServer.DataCollector.Commands.Command import Command
+from publicServer.DataCollector.Database.Models.LatestNew import LatestNew
+from publicServer.DataCollector.Database.session import db
+from publicServer.config.constants import API_ENDPOINT, TEN_MINUTES
+from publicServer.config.definitions import KEY_URL
 
 
 class GetLatestNews(Command, ABC):

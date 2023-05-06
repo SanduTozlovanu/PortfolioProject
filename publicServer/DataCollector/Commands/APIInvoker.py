@@ -1,7 +1,7 @@
 import time
 
-from DataCollector.Commands import Command
-from DataCollector.config.constants import ONE_MINUTE
+from publicServer.DataCollector.Commands import Command
+from publicServer.config.constants import ONE_MINUTE
 from datetime import datetime
 
 

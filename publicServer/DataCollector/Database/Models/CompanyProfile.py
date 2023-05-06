@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey
 
-from DataCollector.Database.base import Base
+from publicServer.DataCollector.Database.base import Base
 
 
 class CompanyProfile(Base):

@@ -2,19 +2,11 @@ from os import path
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-import firebase_admin
-from firebase_admin import credentials, firestore
 
 app = Flask(__name__)
 db = SQLAlchemy()
 DB_NAME = "users.db"
 
-
-cred = credentials.Certificate('firebase_secret.json')
-firebase_admin.initialize_app(cred)
-firestore_db = firestore.client()
-firestore_setter = firestore_db.collection('userConfirmation').document('userConfirmationdoc')
-firestore_getter = firestore_db.collection('userConfirmation')
 
 
 def create_app():

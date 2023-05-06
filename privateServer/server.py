@@ -26,8 +26,9 @@ app = create_app()
 app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
 app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
-BASE_PUBLIC_ENDPOINT = "http://127.0.0.1:5000/"
-BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:5001/"
+BASE_PUBLIC_ENDPOINT = "http://127.0.0.1:6000/"
+BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:6001/"
+
 
 def get_jwt_token():
     try:
@@ -74,7 +75,7 @@ def jwt_required(func):
     return decorator
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/user/login', methods=['POST'])
 @cross_origin()
 def login():
     try:
@@ -93,7 +94,7 @@ def login():
         return make_response("Internal server error", 500)
 
 
-@app.route('/register', methods=['POST'])
+@app.route('/user/register', methods=['POST'])
 @cross_origin()
 def register():
     try:
@@ -109,14 +110,14 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         return make_response(new_user.as_dict(), 201)
-    except SQLAlchemyError as exception:
+    except SQLAlchemyError:
         return make_response("<h1>This user already exists</h1>", 409)
     except Exception as exc:
         print(exc)
         return make_response("<h1>Internal Server error</h1>", 500)
 
 
-@app.route('/confirm', methods=['POST'])
+@app.route('/user/confirm', methods=['POST'])
 @cross_origin()
 def confirm():
     try:
@@ -143,8 +144,20 @@ def confirm():
         return make_response("Server error", 500)
 
 
+@app.route('/stock/details/<company_ticker>', methods=['GET'])
+@cross_origin()
+def get_company_details(company_ticker):
+    return make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/details/" + company_ticker)
+
+
+@app.route('/stock/chart/price/<company_ticker>', methods=['GET'])
+@cross_origin()
+def get_company_price_chart(company_ticker):
+    return make_request("GET", BASE_PUBLIC_ENDPOINT + "api/stock/chart/price/" + company_ticker)
+
+
 def app_run():
-    app.run(debug=True, port=4999, use_reloader=False)
+    app.run(debug=True, port=5999, use_reloader=False)
 
 
 if __name__ == "__main__":
