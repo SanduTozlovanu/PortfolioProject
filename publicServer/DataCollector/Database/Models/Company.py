@@ -1,8 +1,10 @@
 from sqlalchemy import Column, String, Integer
+
+from publicServer.DataCollector.Database.JsonAble import JsonAble
 from publicServer.DataCollector.Database.base import Base
 
 
-class Company(Base):
+class Company(Base, JsonAble):
     __tablename__ = "companies"
     id = Column("id", Integer, primary_key=True)
     ticker = Column("ticker", String, unique=True)

@@ -2,10 +2,11 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Integer, Float, Date, ForeignKey
 
+from publicServer.DataCollector.Database.JsonAble import JsonAble
 from publicServer.DataCollector.Database.base import Base
 
 
-class CompanyProfile(Base):
+class CompanyProfile(Base, JsonAble):
     __tablename__ = "companyProfiles"
     ticker = Column("ticker", String, ForeignKey("companies.ticker"), primary_key=True)
     price = Column("price", Float, nullable=False)

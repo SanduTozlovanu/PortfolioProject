@@ -22,7 +22,7 @@ period = n_years * 365
 
 @st.cache
 def load_data(ticker):
-    data = yf.download(ticker, START, TODAY)
+    data = yf.download(ticker, period="max")
     data.reset_index(inplace=True)
     return data
 
@@ -41,6 +41,7 @@ def plot_raw_data():
     fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
     fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
     fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+    fig.to_json()
     st.plotly_chart(fig)
 
 
@@ -65,7 +66,7 @@ with open("hello.txt", "w") as file:
     # Write "Hello, world!" to the file
     file.write(fig1.to_json())
 
-plot_plotly(fig1.to_json())
+
 
 st.plotly_chart(fig1)
 

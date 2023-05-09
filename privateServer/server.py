@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import functools
 import os
 import threading
@@ -9,13 +10,14 @@ import jwt
 import requests
 from flask import make_response, request
 from flask_cors import cross_origin
+from requests import Response
 from sqlalchemy import and_
 from sqlalchemy.exc import SQLAlchemyError
 
 from JWTHelper import JWTHandler
 from privateServer import mailSender
 from privateServer.app import db, create_app
-from privateServer.app.models import User
+from privateServer.app.models import User, Stock, Transaction, Portfolio
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.getcwd(), "config.ini"))
@@ -26,30 +28,47 @@ app = create_app()
 app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
 app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
-BASE_PUBLIC_ENDPOINT = "http://127.0.0.1:6000/"
-BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:6001/"
+BASE_PUBLIC_ENDPOINT = "http://127.0.0.1:6000/api/"
+BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:6001/api/"
 
 
 def get_jwt_token():
     try:
-        jwt_helper.is_token_valid(app.config["JWT"])
+        if jwt_helper.is_token_valid(app.config["JWT"]):
+            return app.config["JWT"]
     except jwt.ExpiredSignatureError:
         app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
         return app.config["JWT"]
 
 
-def make_request(method: str, url: str, json=None):
+def make_request(method: str, url: str, json=None, request=None):
     headers = {"Authorization": get_jwt_token()}
     if method == "GET":
-        return requests.get(url, headers=headers)
+        if request:
+            return requests.get(url, headers=headers, params=request.args)
+        else:
+            return requests.get(url, headers=headers)
     elif method == "POST":
-        return requests.post(url, json=json, headers=headers)
+        if request:
+            return requests.post(url, json=json, headers=headers, params=request.args)
+        else:
+            return requests.post(url, json=json, headers=headers)
     elif method == "PUT":
-        return requests.put(url, json=json, headers=headers)
+        if request:
+            return requests.put(url, json=json, headers=headers, params=request.args)
+        else:
+            return requests.put(url, json=json, headers=headers)
     elif method == "DELETE":
-        return requests.delete(url, headers=headers)
+        if request:
+            return requests.delete(url, headers=headers, params=request.args)
+        else:
+            return requests.delete(url, headers=headers)
     else:
         return None
+
+
+def return_response(response: Response):
+    return make_response(response.text, response.status_code)
 
 
 def jwt_required(func):
@@ -133,7 +152,11 @@ def confirm():
                     if user is None:
                         return make_response("Invalid email", 401)
                     user: User
+                    if user.status:
+                        return make_response("User email is already confirmed!", 400)
                     user.status = True
+                    new_portfolio = Portfolio(user_id=user.id, money=10000)
+                    db.session.add(new_portfolio)
                     db.session.commit()
                     return make_response("Succesfully confirmed", 200)
         if not found_email:
@@ -144,16 +167,102 @@ def confirm():
         return make_response("Server error", 500)
 
 
+@app.route('/portfolio/stock/buy', methods=['POST'])
+@cross_origin()
+@jwt_required
+def buy_stock():
+    try:
+        ticker = request.json["ticker"]
+        price = request.json["price"]
+        quantity = request.json["quantity"]
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        if quantity * price > portfolio.money:
+            return make_response("Not enough funds to buy stock", 400)
+        stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
+        if stock is None:
+            new_stock = Stock(ticker=ticker, portfolio_id=portfolio.id, medium_buy_price=price,
+                             buy_date=datetime.datetime.now(), quantity=quantity)
+            db.session.add(new_stock)
+        else:
+            stock.medium_buy_price = (stock.medium_buy_price * stock.quantity + price * quantity) / (
+                    quantity + stock.quantity)
+            stock.quantity += quantity
+        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price, date=datetime.datetime.now(),
+                                      quantity=quantity, is_buy=True)
+        portfolio.money -= new_transaction.total_price
+        db.session.add(new_transaction)
+        db.session.commit()
+        return make_response("Succesfully bought", 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/portfolio/stock/sell', methods=['POST'])
+@cross_origin()
+@jwt_required
+def sell_stock():
+    try:
+        ticker = request.json["ticker"]
+        price = request.json["price"]
+        quantity = request.json["quantity"]
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
+        if stock is None:
+            return make_response("You dont have this stock!", 404)
+        else:
+            if stock.quantity < quantity:
+                return make_response("You dont have enough of this stock!", 400)
+            stock.quantity -= quantity
+            if stock.quantity == 0:
+                db.session.delete(stock)
+        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price, date=datetime.datetime.now(),
+                                      quantity=quantity, is_buy=False)
+        portfolio.money += new_transaction.total_price
+        db.session.add(new_transaction)
+        db.session.commit()
+        return make_response("Succesfully sold", 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
 @app.route('/stock/details/<company_ticker>', methods=['GET'])
 @cross_origin()
 def get_company_details(company_ticker):
-    return make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/details/" + company_ticker)
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/details/" + company_ticker))
 
 
 @app.route('/stock/chart/price/<company_ticker>', methods=['GET'])
 @cross_origin()
 def get_company_price_chart(company_ticker):
-    return make_request("GET", BASE_PUBLIC_ENDPOINT + "api/stock/chart/price/" + company_ticker)
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/price/" + company_ticker))
+
+
+@app.route('/stock/statement/list/<company_ticker>', methods=['GET'])
+@cross_origin()
+def get_company_financial_statement_list(company_ticker):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement/list/" + company_ticker))
+
+
+@app.route('/stock/statement', methods=['GET'])
+@cross_origin()
+def get_company_financial_statement():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement", request=request))
+
+
+@app.route('/stock/price/<company_list>', methods=['GET'])
+@cross_origin()
+def get_companies_price(company_list):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/price/" + company_list))
+
+
+@app.route('/stock/search/<company>', methods=['GET'])
+@cross_origin()
+def search_companies(company):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search/" + company))
 
 
 def app_run():
