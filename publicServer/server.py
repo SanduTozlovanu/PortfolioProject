@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from urllib.parse import urlencode
 
 from JWTHelper import JWTHandler
+from publicServer.DTOs.RevenueChartBarDto import RevenueChartBarDto
 from publicServer.DTOs.SearchStockDto import SearchStockDto
 from publicServer.DTOs.StockFinancesDto import StockFinancesDto
 from publicServer.DataCollector.Database.Models.Balance import Balance
@@ -131,22 +132,22 @@ def get_company_finances(company_ticker):
         if company_financial_statement is None:
             return make_response("Company statement not found", 404)
 
-        company_balance:Balance = db.query(Balance).filter(
+        company_balance: Balance = db.query(Balance).filter(
             Balance.ticker == company_ticker).first()
         if company_balance is None:
             return make_response("Company balance not found", 404)
 
-        company_ratios:Ratios = db.query(Ratios).filter(
+        company_ratios: Ratios = db.query(Ratios).filter(
             Ratios.ticker == company_ticker).first()
         if company_ratios is None:
             return make_response("Company ratios not found", 404)
 
-        company_key_metrics:KeyMetrics = db.query(KeyMetrics).filter(
+        company_key_metrics: KeyMetrics = db.query(KeyMetrics).filter(
             KeyMetrics.ticker == company_ticker).first()
         if company_key_metrics is None:
             return make_response("Company key metrics not found", 404)
 
-        company_score:Score = db.query(Score).filter(
+        company_score: Score = db.query(Score).filter(
             Score.ticker == company_ticker).first()
         if company_score is None:
             return make_response("Company score not found", 404)
@@ -156,7 +157,7 @@ def get_company_finances(company_ticker):
         if company_statement is None:
             return make_response("Company financial statement", 404)
         stock_finances_dto = StockFinancesDto(balance=company_balance, ratios=company_ratios, score=company_score,
-                                              key_metrics=company_key_metrics,statement=company_statement)
+                                              key_metrics=company_key_metrics, statement=company_statement)
         return make_response(jsonify(stock_finances_dto.__dict__), 200)
     except Exception as exc:
         print(exc)
@@ -194,8 +195,25 @@ def get_company_price_chart(company_ticker):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
         fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
-        fig.layout.update(title_text='Time Series data with Rangeslider', xaxis_rangeslider_visible=True)
+        fig.layout.update(title_text=f'{company.name} price chart', xaxis_rangeslider_visible=True,
+                          showlegend=False)
         return make_response(fig.to_json(), 200)
+    except:
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/chart/revenue/<company_ticker>', methods=['GET'])
+@jwt_required
+def get_company_revenue_chart(company_ticker):
+    try:
+        returned_dtos = []
+        statements_list: list[FinancialStatement] = db.query(FinancialStatement).filter(
+            FinancialStatement.ticker == company_ticker).order_by(FinancialStatement.date.asc()).all()
+        if len(statements_list) == 0:
+            return make_response("No financial statement found for this company_ticker", 404)
+        for statement in statements_list:
+            returned_dtos.append(RevenueChartBarDto(statement.date, statement.revenue))
+        return make_response(jsonify([revenue_dto.__dict__ for revenue_dto in returned_dtos]), 200)
     except:
         return make_response("Internal server error", 500)
 

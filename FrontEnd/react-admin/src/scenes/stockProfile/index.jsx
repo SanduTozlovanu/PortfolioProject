@@ -13,6 +13,8 @@ import axios from "axios";
 import Topbar from "../global/Topbar";
 import StatBox from "../../components/StatBox";
 import FinancialStats from "../../components/FinancialStats";
+import PriceChartComponent from "../../components/PriceChartComponent";
+import RevenueBarChart from "../../components/RevenueBarChart";
 
 const StockProfile = () => {
     const [profile, setProfile] = useState({});
@@ -133,6 +135,16 @@ const StockProfile = () => {
                 </Grid>
             </Grid>
             <FinancialStats stock_name={stock_name}></FinancialStats>
+            <Grid container spacing={1}>
+                <Grid item xs={6} md={6}>
+                    <PriceChartComponent stock_name={stock_name}></PriceChartComponent>
+                </Grid>
+                <Grid item xs={6} md={6}>
+                    <Box height="450px" width="650px">
+                        <RevenueBarChart stock_name={stock_name}/>
+                    </Box>
+                </Grid>
+            </Grid>
         </Box>
     );
 };

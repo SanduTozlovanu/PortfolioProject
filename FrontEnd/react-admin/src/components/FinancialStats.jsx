@@ -21,7 +21,7 @@ const FinancialStats = ({stock_name}) => {
             setError("")
         } catch(error){
             console.log(error)
-            setError("Failed to get profile!")
+            setError("Failed to get financial stats!")
         }
     }
     return (
@@ -29,14 +29,15 @@ const FinancialStats = ({stock_name}) => {
             <Box style={{margin: '10px'}}>
                 <Typography variant="h2" style={{textAlign: 'center'}}>Earnings: {finStats.title}</Typography>
             </Box>
-            <Grid container spacing={4}>
+            <Box height="20px"></Box>
+            <Grid container spacing={2} sx={{ padding: '10px 10px' }} backgroundColor={colors.blueAccent[800]}>
                 <Grid item xs={3} md={3}>
                     <Typography variant="h4" style={{textAlign: 'left', marginBottom:"2px"}}> Valuation</Typography>
                     <StatComponent stat="P/E" value={finStats.pe}></StatComponent>
                     <StatComponent stat="Price To Sales" value={finStats.priceToSales}></StatComponent>
                     <StatComponent stat="EV to EBITDA" value={finStats.evToEbitda}></StatComponent>
                     <StatComponent stat="Price to Book" value={finStats.priceToBookRatio}></StatComponent>
-                    <StatComponent stat="Free Cash Flow Yield" value={finStats.evToEbitda}></StatComponent>
+                    <StatComponent stat="Free Cash Flow Yield" value={finStats.freeCashFlowYield}></StatComponent>
                 </Grid>
                 <Grid item xs={3} md={3}>
                     <Typography variant="h4" style={{textAlign: 'left', marginBottom:"2px"}}> Income & Expenses</Typography>
@@ -56,7 +57,7 @@ const FinancialStats = ({stock_name}) => {
                 <Grid item xs={3} md={3}>
                     <Typography variant="h4" style={{textAlign: 'left', marginBottom:"2px"}}> Balance</Typography>
                     <StatComponent stat="Total Cash" value={finStats.totalCash}></StatComponent>
-                    <StatComponent stat="Total Debt" value={finStats.priceToSales}></StatComponent>
+                    <StatComponent stat="Total Debt" value={finStats.totalDebt}></StatComponent>
                     <StatComponent stat="Net" value={finStats.net}></StatComponent>
                     <StatComponent stat="Total Investments" value={finStats.totalInvestments}></StatComponent>
                 </Grid>
