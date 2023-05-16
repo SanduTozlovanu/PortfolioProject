@@ -41,9 +41,9 @@ class GetCompanyProfile(Command, ABC):
             com_profile = CompanyProfile(ticker=profile["symbol"], companyName=profile["companyName"],
                                          description=profile["description"], exchange=profile["exchange"],
                                          fullTimeEmployees=profile["fullTimeEmployees"], image=profile["image"],
-                                         industry=profile["industry"], price=profile["price"], ceo=profile["ceo"],
-                                         ipoDate=ipo_date, website=profile["website"],
-                                         mktCap=profile["mktCap"], volAvg=profile["volAvg"])
+                                         industry=profile["industry"], sector=profile["sector"], price=profile["price"],
+                                         ceo=profile["ceo"], ipoDate=ipo_date, website=profile["website"],
+                                         mktCap=profile["mktCap"], volAvg=profile["volAvg"], beta=profile["beta"])
             result: CompanyProfile = db.query(CompanyProfile).filter(CompanyProfile.ticker == com_profile.ticker).first()
             if result:
                 result.update(com_profile)

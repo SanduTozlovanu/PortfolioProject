@@ -1,31 +1,26 @@
-import { Box, IconButton, useTheme } from "@mui/material";
+import {Box, IconButton, Typography, Avatar, useTheme} from "@mui/material";
 import { useContext } from "react";
 import { ColorModeContext, tokens } from "../../theme";
-import InputBase from "@mui/material/InputBase";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import NotificationsOutlinedIcon from "@mui/icons-material/NotificationsOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
-import SearchIcon from "@mui/icons-material/Search";
+import Header from "../../components/Header";
 
-const Topbar = () => {
+const Topbar = ({title, subtitle, ticker}) => {
   const theme = useTheme();
-  const colors = tokens(theme.palette.mode);
   const colorMode = useContext(ColorModeContext);
+  let link = "https://financialmodelingprep.com/image-stock/" + ticker + ".png"
 
   return (
     <Box display="flex" justifyContent="space-between" p={2}>
-      {/* SEARCH BAR */}
-      <Box
-        display="flex"
-        backgroundColor={colors.primary[400]}
-        borderRadius="3px"
-      >
-        <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Search" />
-        <IconButton type="button" sx={{ p: 1 }}>
-          <SearchIcon />
-        </IconButton>
+      <Box display="flex">
+        {ticker && (<Avatar src={link} alt="Image" style={{marginRight:"14px", marginTop:"12px", width: "50px", height: "50px"}} />)}
+        <Header
+            title={title}
+            subtitle={subtitle}
+        />
       </Box>
 
       {/* ICONS */}

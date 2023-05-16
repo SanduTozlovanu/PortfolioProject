@@ -4,6 +4,8 @@ import functools
 import os
 import threading
 from random import randint
+from urllib.parse import urlencode
+
 from pymongo import MongoClient
 
 import jwt
@@ -33,36 +35,24 @@ BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:6001/api/"
 
 
 def get_jwt_token():
-    try:
-        if jwt_helper.is_token_valid(app.config["JWT"]):
-            return app.config["JWT"]
-    except jwt.ExpiredSignatureError:
+    if not jwt_helper.is_token_valid(app.config["JWT"]):
         app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
-        return app.config["JWT"]
+    return app.config["JWT"]
 
 
 def make_request(method: str, url: str, json=None, request=None):
     headers = {"Authorization": get_jwt_token()}
+    if request:
+        query_string = "?" + urlencode(request.args)
+        url += query_string
     if method == "GET":
-        if request:
-            return requests.get(url, headers=headers, params=request.args)
-        else:
-            return requests.get(url, headers=headers)
+        return requests.get(url, headers=headers)
     elif method == "POST":
-        if request:
-            return requests.post(url, json=json, headers=headers, params=request.args)
-        else:
-            return requests.post(url, json=json, headers=headers)
+        return requests.post(url, json=json, headers=headers)
     elif method == "PUT":
-        if request:
-            return requests.put(url, json=json, headers=headers, params=request.args)
-        else:
-            return requests.put(url, json=json, headers=headers)
+        return requests.put(url, json=json, headers=headers)
     elif method == "DELETE":
-        if request:
-            return requests.delete(url, headers=headers, params=request.args)
-        else:
-            return requests.delete(url, headers=headers)
+        return requests.delete(url, headers=headers)
     else:
         return None
 
@@ -182,13 +172,14 @@ def buy_stock():
         stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
         if stock is None:
             new_stock = Stock(ticker=ticker, portfolio_id=portfolio.id, medium_buy_price=price,
-                             buy_date=datetime.datetime.now(), quantity=quantity)
+                              buy_date=datetime.datetime.now(), quantity=quantity)
             db.session.add(new_stock)
         else:
             stock.medium_buy_price = (stock.medium_buy_price * stock.quantity + price * quantity) / (
                     quantity + stock.quantity)
             stock.quantity += quantity
-        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price, date=datetime.datetime.now(),
+        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price,
+                                      date=datetime.datetime.now(),
                                       quantity=quantity, is_buy=True)
         portfolio.money -= new_transaction.total_price
         db.session.add(new_transaction)
@@ -218,7 +209,8 @@ def sell_stock():
             stock.quantity -= quantity
             if stock.quantity == 0:
                 db.session.delete(stock)
-        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price, date=datetime.datetime.now(),
+        new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price,
+                                      date=datetime.datetime.now(),
                                       quantity=quantity, is_buy=False)
         portfolio.money += new_transaction.total_price
         db.session.add(new_transaction)
@@ -241,16 +233,16 @@ def get_company_price_chart(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/price/" + company_ticker))
 
 
-@app.route('/stock/statement/list/<company_ticker>', methods=['GET'])
+@app.route('/stock/finances/<company_ticker>', methods=['GET'])
 @cross_origin()
-def get_company_financial_statement_list(company_ticker):
-    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement/list/" + company_ticker))
+def get_company_finances(company_ticker):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/finances/" + company_ticker))
 
 
-@app.route('/stock/statement', methods=['GET'])
+@app.route('/stock/statement/last/<company_ticker>', methods=['GET'])
 @cross_origin()
-def get_company_financial_statement():
-    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement", request=request))
+def get_company_financial_statement(company_ticker):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement/last/" + company_ticker))
 
 
 @app.route('/stock/price/<company_list>', methods=['GET'])
@@ -263,6 +255,12 @@ def get_companies_price(company_list):
 @cross_origin()
 def search_companies(company):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search/" + company))
+
+
+@app.route('/stock/search', methods=['GET'])
+@cross_origin()
+def search_query():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search", request=request))
 
 
 def app_run():

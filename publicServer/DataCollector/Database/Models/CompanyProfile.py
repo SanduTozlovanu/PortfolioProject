@@ -11,10 +11,12 @@ class CompanyProfile(Base, JsonAble):
     ticker = Column("ticker", String, ForeignKey("companies.ticker"), primary_key=True)
     price = Column("price", Float, nullable=False)
     volAvg = Column("volAvg", Integer, nullable=False)
+    beta = Column("beta", Float, nullable=False)
     mktCap = Column("mktCap", Integer, nullable=False)
     companyName = Column("companyName", String, nullable=False)
     exchange = Column("exchange", String, nullable=False)
     industry = Column("industry", String, nullable=False)
+    sector = Column("sector", String, nullable=False)
     website = Column("website", String, nullable=False)
     description = Column("description", String, nullable=False)
     ceo = Column("ceo", String, nullable=False)
@@ -22,16 +24,18 @@ class CompanyProfile(Base, JsonAble):
     image = Column("image", String, nullable=False)
     ipoDate = Column("ipoDate", Date)
 
-    def __init__(self, ticker: String, price: float, volAvg: int, mktCap: int, companyName: str,
-                 exchange: str, industry: str, website: str, description: str, ceo: str,
+    def __init__(self, ticker: String, price: float, volAvg: int, beta: float, mktCap: int, companyName: str,
+                 exchange: str, industry: str, sector: str, website: str, description: str, ceo: str,
                  fullTimeEmployees: int, image: str, ipoDate: datetime.date):
         self.ticker = ticker
         self.price = price
         self.volAvg = volAvg
+        self.beta = beta
         self.mktCap = mktCap
         self.companyName = companyName
         self.exchange = exchange
         self.industry = industry
+        self.sector = sector
         self.website = website
         self.description = description
         self.ceo = ceo
@@ -43,11 +47,13 @@ class CompanyProfile(Base, JsonAble):
         self.ticker: str = object.ticker
         self.price: float = object.price
         self.volAvg: int = object.volAvg
+        self.beta: float = object.beta
         self.mktCap: int = object.mktCap
         self.companyName: str = object.companyName
         self.exchange: str = object.exchange
         self.industry: str = object.industry
         self.website: str = object.website
+        self.sector: str = object.sector
         self.description: str = object.description
         self.ceo: str = object.ceo
         self.fullTimeEmployees: int = object.fullTimeEmployees

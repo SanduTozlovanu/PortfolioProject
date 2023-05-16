@@ -13,6 +13,7 @@ import Pie from "./scenes/pie";
 import FAQ from "./scenes/faq";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
+import StockProfile from "./scenes/stockProfile";
 
 function App() {
   const [theme, colorMode] = useMode();
@@ -30,9 +31,9 @@ function App() {
         <div className="app">
           <Sidebar isSidebar={isSidebar}  onToggleCollapse={handleToggleCollapse}/>
           <main className="content" style={{marginLeft: `${isCollapsed ? 80 : 270}px`}}>
-            <Topbar setIsSidebar={setIsSidebar} />
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/stockProfile/:stock_name" element={<StockProfile />} />
               <Route path="/team" element={<Team />} />
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/stockScreener" element={<StockScreener />} />

@@ -1,5 +1,5 @@
 from abc import ABC
-
+from datetime import datetime
 
 import requests
 from publicServer.DataCollector.Commands.Command import Command
@@ -14,18 +14,18 @@ class GetFinancialStatements(Command, ABC):
     def __init__(self):
         super().__init__(ONE_MINUTE, 5, 10)
         self.url = API_ENDPOINT + "v3/income-statement/{}?period=quarter&limit=" + str(self.rate_cost) + "&" + KEY_URL
-        self.collectList = []
 
     def execute(self):
+        collect_list = []
         for ticker in db.query(Company.ticker).all():
             ticker = ticker.ticker
             statement = db.query(FinancialStatement).filter(FinancialStatement.ticker == ticker).first()
             if not statement:
-                self.collectList.append(ticker)
-                if len(self.collectList) >= self.rate_cost:
+                collect_list.append(ticker)
+                if len(collect_list) >= self.rate_cost:
                     break
-        for i in range(0, len(self.collectList)):
-            self.prepareRequest(i)
+        for i in range(0, len(collect_list)):
+            self.prepareRequest(i, collect_list)
             result = requests.get(self.url)
             if result.status_code == 200:
                 self.collectData(result.json())
@@ -33,14 +33,15 @@ class GetFinancialStatements(Command, ABC):
                 print(f"[GetFinancialStatements] failed to get company financial statement {result.status_code}")
                 return
 
-    def prepareRequest(self, index):
+    def prepareRequest(self, index, collecting_list):
         self.url = API_ENDPOINT + "v3/income-statement/{}?period=quarter&limit=" + str(self.rate_cost) + "&" + KEY_URL
-        self.url = self.url.format(self.collectList[index])
+        self.url = self.url.format(collecting_list[index])
 
     @staticmethod
     def collectData(result):
         for statement in result:
-            financial_statement = FinancialStatement(ticker=statement["symbol"], date=statement["date"], period=statement["period"],
+            date = datetime.strptime(statement["date"], "%Y-%m-%d")
+            financial_statement = FinancialStatement(ticker=statement["symbol"], date=date, period=statement["period"],
                                                      revenue=statement["revenue"], costOfRevenue=statement["revenue"], grossProfit=statement["grossProfit"],
                                                      grossProfitRatio=statement["grossProfitRatio"], researchAndDevelopmentExpenses=statement["researchAndDevelopmentExpenses"],
                                                      generalAndAdministrativeExpenses=statement["generalAndAdministrativeExpenses"], sellingAndMarketingExpenses=statement["sellingAndMarketingExpenses"],

@@ -1,101 +1,190 @@
-import {Box, Typography, useTheme} from "@mui/material";
+import {Box, Typography, IconButton, FormHelperText, useTheme} from "@mui/material";
 import {DataGrid} from "@mui/x-data-grid";
 import {tokens} from "../../theme";
-import {mockDataStocks} from "../../data/mockData";
-import Header from "../../components/Header";
+import {stockScreenerFilters} from "../../data/mockData";
+import { useNavigate } from 'react-router-dom';
 import Select from "../../components/SelectComponent";
+import {useState, useEffect} from "react";
+import SearchIcon from '@mui/icons-material/Search';
+import config from "../../config.json";
+import axios from "axios";
+import InputBase from "@mui/material/InputBase";
+import Topbar from "../global/Topbar";
 
 const StockScreener = () => {
+    const [stocks, setStocks] = useState([]);
+    const [error, setError] = useState('');
+    const [marketCapRange, setMarketCapRange] = useState("");
+    const [priceRange, setPriceRange] = useState("");
+    const [betaRange, setBetaRange] = useState("");
+    const [volumeRange, setVolumeRange] = useState("");
+    const [dividendRange, setDividendRange] = useState("");
+    const [sector, setSector] = useState("");
+    const [selectedStock, setSelectedStock] = useState("");
+
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        search()
+    }, [marketCapRange, priceRange, betaRange, volumeRange, dividendRange, sector]);
+
+    const handleInputChange = (event) => {
+        setSelectedStock(event.target.value);
+    };
+    const rowClickEvent = (params) => {
+        console.log("stockProfile ticker " + stocks[params.id - 1].ticker)
+        navigate('/stockProfile/' + stocks[params.id - 1].ticker)
+    }
+
+    const search = async () => {
+        let queryParams = composeQueryParams()
+
+        try{
+            const response = await axios.get(`${config.url}/stock/search${queryParams}`);
+            setStocks(response.data)
+            setError("")
+        } catch(error){
+            console.log(error)
+            setError("Failed to get search stocks!")
+        }
+    }
+    const searchStock = async () => {
+        if (selectedStock === "")
+            return
+        try{
+            const response = await axios.get(`${config.url}/stock/search/${selectedStock}`);
+            setStocks(response.data)
+            setError("")
+        } catch(error){
+            console.log(error)
+            setError("Failed to get search stocks!")
+        }
+    }
+    const composeQueryParams = () => {
+        let queryParams = "?"
+        queryParams = composeQueryParam(queryParams, marketCapRange)
+        queryParams = composeQueryParam(queryParams, priceRange)
+        queryParams = composeQueryParam(queryParams, betaRange)
+        queryParams = composeQueryParam(queryParams, volumeRange)
+        queryParams = composeQueryParam(queryParams, dividendRange)
+        if (sector)
+        {
+            queryParams = composeQueryParam(queryParams, `sector=${sector}`)
+
+        }
+        return queryParams
+
+    }
+    const composeQueryParam = (params, param) => {
+        if (params === "?" && param)
+        {
+            params += param
+        }
+        else if(params !== "?" && param)
+        {
+            params += "&"
+            params += param
+        }
+        return params
+
+    }
     const columns = [
-        {field: "id", headerName: "Id"},
-        {field: "symbol", headerName: "Symbol"},
+        {field: "id", headerName: "Id", width:30},
+        {field: "name", headerName: "Name", width:200},
+        {
+            field: "price",
+            headerName: "Price",
+            flex: 1,
+            width:50,
+            renderCell: (params) => (
+                <Typography color={colors.greenAccent[500]}>
+                    ${params.row.price}
+                </Typography>
+            )
+        },
         {
             field: "marketCap",
             headerName: "Market Cap",
             flex: 1,
+            width:100,
             renderCell: (params) => (
                 <Typography color={colors.greenAccent[500]}>
                     {params.row.marketCap}$
                 </Typography>
             ),
         },
+
         {
             field: "beta",
             headerName: "Beta",
             flex: 1,
-        },
-        {
-            field: "price",
-            headerName: "Price",
-            flex: 1,
-            renderCell: (params) => (
-                <Typography color={colors.greenAccent[500]}>
-                    ${params.row.price}
-                </Typography>
-            ),
+            width:50
+
         },
         {
             field: "sector",
             headerName: "Sector",
             flex: 1,
-        },
-        {
-            field: "industry",
-            headerName: "Industry",
-            flex: 1,
-        },
+            width:150
+        }
     ];
 
     return (
         <Box m="20px">
-            <Header title="STOCK SCREENER" subtitle="Search stocks based on criterias"/>
-
+            <Topbar title="STOCK SCREENER" subtitle="Search stocks based on criteria"/>
             {
             <Box display="flex">
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.marketCap}
                     defaultLabel={"Market cap Range"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => setMarketCapRange(option)}
                     width={150}
                 />
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.price}
                     defaultLabel={"Price Range"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => setPriceRange(option)}
                     width={120}
                 />
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.beta}
                     defaultLabel={"Beta Range"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => setBetaRange(option)}
                     width={80}
                 />
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.volume}
                     defaultLabel={"Volume Range"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => setVolumeRange(option)}
                     width={120}
                 />
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.dividends}
                     defaultLabel={"Dividend Range"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => setDividendRange(option)}
                     width={80}
                 />
                 <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
+                    options={stockScreenerFilters.sector}
                     defaultLabel={"Sector"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
+                    onSelect={(option) => {
+                        setSector(option)
+                    }}
                     width={150}
                 />
-                <Select
-                    options={['Option 1', 'Option 2', 'Option 3']}
-                    defaultLabel={"Industry"}
-                    onSelect={(option) => console.log(`Selected: ${option}`)}
-                    width={150}
-                />
+                <Box
+                    display="flex"
+                    backgroundColor={colors.primary[400]}
+                    borderRadius="3px"
+                >
+                    <InputBase sx={{ ml: 2, flex: 1 }} placeholder="Stock name" onChange={handleInputChange}/>
+                    <IconButton type="button" sx={{ p: 1 }} onClick={searchStock}>
+                        <SearchIcon />
+                    </IconButton>
+                </Box>
+                <FormHelperText error={Boolean(error)}>{error}</FormHelperText>
             </Box>
             }
             <Box
@@ -127,7 +216,7 @@ const StockScreener = () => {
                     },
                 }}
             >
-                <DataGrid rows={mockDataStocks} columns={columns}/>
+                <DataGrid rows={stocks} columns={columns} onRowClick={rowClickEvent}/>
             </Box>
         </Box>
     );

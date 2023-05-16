@@ -1,15 +1,17 @@
-from sqlalchemy import Column, String, Integer, BigInteger, Float
+from datetime import datetime
 
-from publicServer.DataCollector.Database.JsonAble import JsonAble
+from sqlalchemy import Column, String, Integer, BigInteger, Float, Date
+
+from publicServer.DataCollector.Database.JsonAble import FinancialStatementJsonAble
 from publicServer.DataCollector.Database.base import Base
 
 
-class FinancialStatement(Base, JsonAble):
+class FinancialStatement(Base, FinancialStatementJsonAble):
     __tablename__ = "financialStatements"
     id = Column("id", Integer, primary_key=True)
     ticker = Column("ticker", String, nullable=False)
     title = Column("title", String, nullable=False)
-    date = Column("date", String, nullable=False)
+    date = Column("date", Date, nullable=False)
     period = Column("period", String, nullable=False)
     revenue = Column("revenue", BigInteger, nullable=False)
     costOfRevenue = Column("costOfRevenue", BigInteger, nullable=False)
@@ -41,14 +43,14 @@ class FinancialStatement(Base, JsonAble):
     weightedAverageShsOutDil = Column("weightedAverageShsOutDil", BigInteger, nullable=False)
     finalLink = Column("finalLink", String, nullable=False)
 
-    def __init__(self, ticker, date, period, revenue, costOfRevenue, grossProfit, grossProfitRatio, researchAndDevelopmentExpenses,
+    def __init__(self, ticker, date: datetime, period, revenue, costOfRevenue, grossProfit, grossProfitRatio, researchAndDevelopmentExpenses,
                 generalAndAdministrativeExpenses, sellingAndMarketingExpenses, sellingGeneralAndAdministrativeExpenses,
                 otherExpenses, operatingExpenses, costAndExpenses, interestIncome, interestExpense,
                 depreciationAndAmortization, ebitda, ebitdaratio, operatingIncome, operatingIncomeRatio,
                 totalOtherIncomeExpensesNet, incomeBeforeTax, incomeTaxExpense, incomeBeforeTaxRatio, netIncome,
                 netIncomeRatio, eps, epsdiluted, weightedAverageShsOut, weightedAverageShsOutDil, finalLink):
         self.ticker = ticker
-        self.title = date + " " + period
+        self.title = str(date.date()) + " " + period
         self.date = date
         self.period = period
         self.revenue = revenue
