@@ -1,4 +1,5 @@
 import functools
+import json
 import threading
 from sqlite3 import Row
 
@@ -19,6 +20,7 @@ from publicServer.DataCollector.Database.Models.Company import Company
 from publicServer.DataCollector.Database.Models.CompanyProfile import CompanyProfile
 from publicServer.DataCollector.Database.Models.FinancialStatement import FinancialStatement
 from publicServer.DataCollector.Database.Models.KeyMetrics import KeyMetrics
+from publicServer.DataCollector.Database.Models.PricePrediction import PricePrediction
 from publicServer.DataCollector.Database.Models.Ratios import Ratios
 from publicServer.DataCollector.Database.Models.Score import Score
 from publicServer.DataCollector.Database.Models.StockPrice import StockPrice
@@ -198,6 +200,18 @@ def get_company_price_chart(company_ticker):
         fig.layout.update(title_text=f'{company.name} price chart', xaxis_rangeslider_visible=True,
                           showlegend=False)
         return make_response(fig.to_json(), 200)
+    except:
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/chart/prediction/<company_ticker>', methods=['GET'])
+@jwt_required
+def get_company_price_prediction(company_ticker):
+    try:
+        prediction = db.query(PricePrediction).filter(PricePrediction.ticker == company_ticker).first()
+        if prediction is None:
+            return make_response("Prediction not found", 404)
+        return make_response(json.loads(prediction), 200)
     except:
         return make_response("Internal server error", 500)
 

@@ -233,6 +233,12 @@ def get_company_price_chart(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/price/" + company_ticker))
 
 
+@app.route('/stock/chart/prediction/<company_ticker>', methods=['GET'])
+@cross_origin()
+def get_company_price_prediction(company_ticker):
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/prediction/" + company_ticker))
+
+
 @app.route('/stock/chart/revenue/<company_ticker>', methods=['GET'])
 @cross_origin()
 def get_company_revenue_data(company_ticker):

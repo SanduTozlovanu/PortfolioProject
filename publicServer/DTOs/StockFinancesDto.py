@@ -28,7 +28,6 @@ class StockFinancesDto:
         self.priceToBookRatio = round(ratios.priceToBookRatio, 2)
         self.title = statement.title
 
-
     @staticmethod
     def number_to_string(number):
         suffixes = ["", "Th", "Ml", "Bl", "Tr", "Qd", "Qt"]

@@ -6,6 +6,7 @@ from publicServer.DataCollector.Commands.CommandList.GetCompanyRatios import Get
 from publicServer.DataCollector.Commands.CommandList.GetCompanyScore import GetCompanyScore
 from publicServer.DataCollector.Commands.CommandList.GetFinancialStatements import GetFinancialStatements
 from publicServer.DataCollector.Commands.CommandList.GetLatestNews import GetLatestNews
+from publicServer.DataCollector.Commands.CommandList.GetPricePrediction import GetPricePrediction
 from publicServer.DataCollector.Commands.CommandList.GetSNPList import GetSNPList
 from publicServer.DataCollector.Commands.CommandList.GetStockPrice import GetStockPrice
 
