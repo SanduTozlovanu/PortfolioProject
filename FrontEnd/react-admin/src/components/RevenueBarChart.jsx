@@ -1,4 +1,4 @@
-import {CircularProgress, useTheme} from "@mui/material";
+import {CircularProgress, Typography, useTheme, Box} from "@mui/material";
 import {ResponsiveBar} from "@nivo/bar";
 import {tokens} from "../theme";
 import React, {useEffect, useState} from "react";
@@ -37,6 +37,8 @@ const RevenueBarChart = ({stock_name}) => {
     }
 
     return (
+        <Box height="450px" width="650px">
+            <Typography variant="h3" style={{ textAlign: 'center' }}>Revenue</Typography>
             <ResponsiveBar
                 data={chartJson}
                 keys={[
@@ -145,6 +147,7 @@ const RevenueBarChart = ({stock_name}) => {
                 ariaLabel="Nivo bar chart demo"
                 barAriaLabel={e => e.id + ": " + e.formattedValue + " in country: " + e.indexValue}
             />
+        </Box>
     );
 };
 

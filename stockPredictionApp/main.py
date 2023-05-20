@@ -22,7 +22,7 @@ period = n_years * 365
 
 @st.cache
 def load_data(ticker):
-    data = yf.download(ticker, period="max")
+    data = yf.download(ticker, period="5y")
     data.reset_index(inplace=True)
     return data
 

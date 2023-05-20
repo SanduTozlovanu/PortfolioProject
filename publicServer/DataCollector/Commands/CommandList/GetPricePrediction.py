@@ -1,6 +1,7 @@
 from abc import ABC
 
 import yfinance as yf
+from matplotlib import pyplot as plt
 from prophet import Prophet
 from prophet.plot import plot_plotly
 

@@ -197,8 +197,7 @@ def get_company_price_chart(company_ticker):
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
         fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
-        fig.layout.update(title_text=f'{company.name} price chart', xaxis_rangeslider_visible=True,
-                          showlegend=False)
+        fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
         return make_response(fig.to_json(), 200)
     except:
         return make_response("Internal server error", 500)
@@ -208,11 +207,12 @@ def get_company_price_chart(company_ticker):
 @jwt_required
 def get_company_price_prediction(company_ticker):
     try:
-        prediction = db.query(PricePrediction).filter(PricePrediction.ticker == company_ticker).first()
+        prediction: PricePrediction = db.query(PricePrediction).filter(PricePrediction.ticker == company_ticker).first()
         if prediction is None:
             return make_response("Prediction not found", 404)
-        return make_response(json.loads(prediction), 200)
-    except:
+        return make_response(json.loads(prediction.jsonData), 200)
+    except Exception as exc:
+        print(exc)
         return make_response("Internal server error", 500)
 
 

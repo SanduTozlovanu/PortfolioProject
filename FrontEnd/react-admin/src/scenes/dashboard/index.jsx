@@ -8,7 +8,6 @@ import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import TrafficIcon from "@mui/icons-material/Traffic";
 import Header from "../../components/Header";
 import LineChart from "../../components/LineChart";
-import RevenueBarChart from "../../components/RevenueBarChart";
 import StatBox from "../../components/StatBox";
 import ProgressCircle from "../../components/ProgressCircle";
 
@@ -254,9 +253,6 @@ const Dashboard = () => {
           >
             Sales Quantity
           </Typography>
-          <Box height="250px" mt="-20px">
-            <RevenueBarChart isDashboard={true} />
-          </Box>
         </Box>
       </Box>
     </Box>

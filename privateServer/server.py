@@ -95,7 +95,8 @@ def login():
             return make_response("Invalid Credentials", 401)
         user: User
         if user.status:
-            return make_response({"token": jwt_helper.create_jwt_token(user_email)}, 200)
+            return make_response({"token": jwt_helper.create_jwt_token(user_email),
+                                  "name": user.name}, 200)
         else:
             return make_response("The account hasn't been confirmed yet", 403)
 
@@ -109,7 +110,8 @@ def register():
     try:
         user_email = request.json["email"]
         user_password = request.json['password']
-        new_user = User(email=user_email, password=user_password, type="user", status=False)
+        user_name = request.json['name']
+        new_user = User(email=user_email, password=user_password, name=user_name, type="user", status=False)
         random_number = randint(10000, 99999)
         confirmations.insert_one({'code': random_number, "email": user_email})
         mailSender.send_mail(user_email, random_number)
@@ -121,6 +123,23 @@ def register():
         return make_response(new_user.as_dict(), 201)
     except SQLAlchemyError:
         return make_response("<h1>This user already exists</h1>", 409)
+    except Exception as exc:
+        print(exc)
+        return make_response("<h1>Internal Server error</h1>", 500)
+
+
+@app.route('/user/confirm/resend', methods=['POST'])
+@cross_origin()
+def confirm_resend():
+    try:
+        user_email = request.json["email"]
+        random_number = randint(10000, 99999)
+        confirmations.insert_one({'code': random_number, "email": user_email})
+        mailSender.send_mail(user_email, random_number)
+    except:
+        return make_response("Wrong data", 400)
+    try:
+        return make_response("Succesfully sent", 200)
     except Exception as exc:
         print(exc)
         return make_response("<h1>Internal Server error</h1>", 500)

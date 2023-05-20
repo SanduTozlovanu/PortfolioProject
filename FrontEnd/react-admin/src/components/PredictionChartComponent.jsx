@@ -3,11 +3,11 @@ import Plotly from 'plotly.js-basic-dist';
 import createPlotlyComponent from 'react-plotly.js/factory';
 import axios from "axios";
 import config from "../config.json";
-import {Box, CircularProgress, Typography, useTheme} from "@mui/material";
+import {CircularProgress, Typography, Box, useTheme} from "@mui/material";
 import {tokens} from "../theme";
 
 const Plot = createPlotlyComponent(Plotly);
-const PriceChartComponent = ({stock_name}) => {
+const PredictionChartComponent = ({stock_name}) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [chartJson, setChartJson] = useState({});
@@ -15,11 +15,11 @@ const PriceChartComponent = ({stock_name}) => {
     const [error, setError] = useState({});
 
     useEffect(() => {
-        getPriceChart()
+        getPredictionChart()
     }, []);
-    const getPriceChart = async () => {
+    const getPredictionChart = async () => {
         try {
-            const response = await axios.get(`${config.url}/stock/chart/price/${stock_name}`);
+            const response = await axios.get(`${config.url}/stock/chart/prediction/${stock_name}`);
             setChartJson(response.data)
             setError("")
             setIsLoading(false)
@@ -39,7 +39,7 @@ const PriceChartComponent = ({stock_name}) => {
 
     return (
         <Box>
-            <Typography variant="h3" style={{ textAlign: 'center' }}>Price</Typography>
+            <Typography variant="h3" style={{textAlign: 'center'}}>Price prediction</Typography>
             <Plot
                 data={chartJson.data.map(data => ({
                     ...data,
@@ -50,8 +50,7 @@ const PriceChartComponent = ({stock_name}) => {
                     line: {
                         ...data.line,
                         color: colors.greenAccent[500], // Set line color to blue
-                    },
-                    fill: 'tozeroy', // Enable fill under the markers
+                    }
                 }))}
                 layout={{
                     ...chartJson.layout,
@@ -65,7 +64,7 @@ const PriceChartComponent = ({stock_name}) => {
                         type: 'date', // Set x-axis type to date
                         tickfont: {
                             color: 'white', // Change x-axis tick color to white
-                        },
+                        }
                     },
                     yaxis: {
                         ...chartJson.layout.yaxis,
@@ -76,12 +75,12 @@ const PriceChartComponent = ({stock_name}) => {
                     },
                     plot_bgcolor: colors.grey[0], // Set plot background color
                     paper_bgcolor: colors.primary[500], // Set paper background color
-                    width: 610, // Set the width of the chart
-                    height: 480, // Set the height of the chart
+                    width: 1050, // Set the width of the chart
+                    height: 600, // Set the height of the chart
                 }}
             />
         </Box>
     );
 };
 
-export default PriceChartComponent;
+export default PredictionChartComponent;

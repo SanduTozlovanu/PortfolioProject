@@ -22,4 +22,5 @@ def runCollector():
     api_invoker.register(GetCompanyRatios())
     api_invoker.register(GetCompanyScore())
     api_invoker.register(GetCompanyBalance())
+    api_invoker.register(GetPricePrediction())
     api_invoker.execute()

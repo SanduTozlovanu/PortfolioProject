@@ -15,6 +15,7 @@ import StatBox from "../../components/StatBox";
 import FinancialStats from "../../components/FinancialStats";
 import PriceChartComponent from "../../components/PriceChartComponent";
 import RevenueBarChart from "../../components/RevenueBarChart";
+import PredictionChartComponent from "../../components/PredictionChartComponent";
 
 const StockProfile = () => {
     const [profile, setProfile] = useState({});
@@ -23,7 +24,7 @@ const StockProfile = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
-    const { stock_name } = useParams();
+    const {stock_name} = useParams();
     const getMarketCap = () => {
         const nr = (profile.mktCap / 1000000000).toFixed(1)
         return nr + " Bln"
@@ -34,12 +35,12 @@ const StockProfile = () => {
     }, []);
 
     const getProfile = async () => {
-        try{
+        try {
             const response = await axios.get(`${config.url}/stock/details/${stock_name}`);
             setProfile(response.data)
             setError("")
             setIsLoading(false)
-        } catch(error){
+        } catch (error) {
             console.log(error)
             setError("Failed to get statement!")
             setIsLoading(false)
@@ -49,24 +50,25 @@ const StockProfile = () => {
     if (isLoading) {
         return (
             <div style={{display: 'flex', justifyContent: 'center'}}>
-                <CircularProgress status="loading" />
+                <CircularProgress status="loading"/>
             </div>
         );
     }
     return (
         <Box m="20px">
-            <Topbar title={profile.companyName} subtitle={profile.sector + ", " + profile.industry} ticker={stock_name} />
+            <Topbar title={profile.companyName} subtitle={profile.sector + ", " + profile.industry}
+                    ticker={stock_name}/>
             <Grid container spacing={1}>
-                <Grid item xs={7} md={5} >
-                    <Typography variant="h2" style={{ textAlign: 'center' }}>Stats</Typography>
-                    <Grid container spacing={2} style={{ marginTop: '1px' }}>
+                <Grid item xs={7} md={5}>
+                    <Typography variant="h2" style={{textAlign: 'center'}}>Stats</Typography>
+                    <Grid container spacing={2} style={{marginTop: '1px'}}>
                         <Grid item xs={6} md={6}>
                             <StatBox
                                 title="Price"
                                 value={profile.price}
                                 icon={
                                     <AttachMoneyIcon
-                                        sx={{ color: colors.greenAccent[300], fontSize: "35px" }}
+                                        sx={{color: colors.greenAccent[300], fontSize: "35px"}}
                                     />
                                 }
                             />
@@ -77,7 +79,7 @@ const StockProfile = () => {
                                 value={getMarketCap()}
                                 icon={
                                     <LocalAtmIcon
-                                        sx={{ color: theme.palette.secondary[100], fontSize: "35px" }}
+                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
@@ -88,7 +90,7 @@ const StockProfile = () => {
                                 value={profile.volAvg}
                                 icon={
                                     <EqualizerIcon
-                                        sx={{ color: theme.palette.secondary[100], fontSize: "35px" }}
+                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
@@ -99,7 +101,7 @@ const StockProfile = () => {
                                 value={profile.beta}
                                 icon={
                                     <TimelineIcon
-                                        sx={{ color: theme.palette.secondary[100], fontSize: "35px" }}
+                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
@@ -110,7 +112,7 @@ const StockProfile = () => {
                                 value={profile.fullTimeEmployees}
                                 icon={
                                     <PeopleIcon
-                                        sx={{ color: theme.palette.secondary[100], fontSize: "35px" }}
+                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
@@ -120,31 +122,31 @@ const StockProfile = () => {
                                 value={profile.exchange}
                                 icon={
                                     <AccountBalanceIcon
-                                        sx={{ color: theme.palette.secondary[100], fontSize: "35px" }}
+                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item xs={5} md={7} >
-                    <Typography variant="h2" style={{ textAlign: 'center' }}>Description</Typography>
-                    <Box backgroundColor={colors.primary[400]} style={{ margin: '10px' }}>
+                <Grid item xs={5} md={7}>
+                    <Typography variant="h2" style={{textAlign: 'center'}}>Description</Typography>
+                    <Box backgroundColor={colors.primary[400]} style={{margin: '10px'}}>
                         <Typography>{profile.description}</Typography>
                     </Box>
                 </Grid>
             </Grid>
             <FinancialStats stock_name={stock_name}></FinancialStats>
-            <Grid container spacing={1}>
+            <Grid container spacing={1} style={{marginTop: '10px'}}>
                 <Grid item xs={6} md={6}>
                     <PriceChartComponent stock_name={stock_name}></PriceChartComponent>
                 </Grid>
                 <Grid item xs={6} md={6}>
-                    <Box height="450px" width="650px">
-                        <RevenueBarChart stock_name={stock_name}/>
-                    </Box>
+                    <RevenueBarChart stock_name={stock_name}/>
                 </Grid>
             </Grid>
+            <PredictionChartComponent stock_name={stock_name}></PredictionChartComponent>
+
         </Box>
     );
 };

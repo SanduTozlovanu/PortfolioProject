@@ -15,6 +15,7 @@ class User(db.Model, JsonAbleUser):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
+    name = db.Column(db.String, nullable=False)
     type = db.Column(db.String(200), nullable=False)
     status = db.Column(db.Boolean, nullable=False)
 
