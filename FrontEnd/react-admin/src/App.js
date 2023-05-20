@@ -18,6 +18,7 @@ import Register from "./scenes/register";
 import Confirm from "./scenes/confirm";
 import Login from "./scenes/login";
 import AuthContext from './components/AuthContext';
+import MyPortfolio from "./scenes/myPortfolio";
 
 function App() {
     const [theme, colorMode] = useMode();
@@ -38,8 +39,8 @@ function App() {
                         <Sidebar onToggleCollapse={handleToggleCollapse}/>
                         <main className="content" style={{marginLeft: `${isCollapsed ? 80 : 270}px`}}>
                             <Routes>
-                                <Route path="/" element={isAuthenticated ? (<Dashboard/>) : (
-                                    <Navigate to="/welcome" replace/>)}/>
+                                <Route path="/" element={isAuthenticated ? (<Dashboard/>) : (<Navigate to="/welcome" replace/>)}/>
+                                <Route path="/myPortfolio" element={isAuthenticated ? (<MyPortfolio/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/stockProfile/:stock_name" element={<StockProfile/>}/>
                                 <Route path="/welcome" element={<Welcome/>}/>
                                 <Route path="/register" element={<Register/>}/>

@@ -17,6 +17,7 @@ import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import WorkIcon from '@mui/icons-material/Work';
 import Authcontext from "../../components/AuthContext";
 
 const Item = ({title, to, icon, selected, setSelected}) => {
@@ -187,9 +188,9 @@ function Sidebar({onToggleCollapse}) {
                             Pages
                         </Typography>}
                         {isAuthenticated && <Item
-                            title="Profile Form"
-                            to="/form"
-                            icon={<PersonOutlinedIcon/>}
+                            title="My Portfolio"
+                            to="/myPortfolio"
+                            icon={<WorkIcon/>}
                             selected={selected}
                             setSelected={setSelected}
                         />}

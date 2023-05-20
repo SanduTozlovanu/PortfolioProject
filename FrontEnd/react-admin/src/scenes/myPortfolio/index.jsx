@@ -1,4 +1,4 @@
-import {Box, Typography, Grid, Divider, CircularProgress, useTheme} from "@mui/material";
+import {Box, Typography, Grid, Stack, CircularProgress, useTheme} from "@mui/material";
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PeopleIcon from '@mui/icons-material/People';
@@ -17,14 +17,14 @@ import PriceChartComponent from "../../components/PriceChartComponent";
 import RevenueBarChart from "../../components/RevenueBarChart";
 import PredictionChartComponent from "../../components/PredictionChartComponent";
 
-const StockProfile = () => {
+const MyPortfolio = () => {
     const [profile, setProfile] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState({});
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const navigate = useNavigate();
-    const {stock_name} = useParams();
+    const stock_name = "AAPL";
     const getMarketCap = () => {
         const nr = (profile.mktCap / 1000000000).toFixed(1)
         return nr + " Bln"
@@ -56,10 +56,10 @@ const StockProfile = () => {
     }
     return (
         <Box m="20px">
-            <Topbar title={profile.companyName} subtitle={profile.sector + ", " + profile.industry}
-                    ticker={stock_name}/>
+            <Topbar title="My Portfolio" subtitle="Portfolio Performance Analysis"
+                    ticker="myPortfolio"/>
             <Grid container spacing={1}>
-                <Grid item xs={5} md={5}>
+                <Grid item xs={7} md={7}>
                     <Typography variant="h2" style={{textAlign: 'center'}}>Stats</Typography>
                     <Grid container spacing={2} style={{marginTop: '1px'}}>
                         <Grid item xs={6} md={6}>
@@ -129,11 +129,7 @@ const StockProfile = () => {
                         </Grid>
                     </Grid>
                 </Grid>
-                <Box>
-                    <Divider orientation="vertical"
-                             sx={{height: "100%", my: 'auto', marginLeft: 2, backgroundColor: colors.primary[400]}}/>
-                </Box>
-                <Grid item xs={6.5} md={6.5}>
+                <Grid item xs={5} md={5}>
                     <Typography variant="h2" style={{textAlign: 'center'}}>Description</Typography>
                     <Box backgroundColor={colors.primary[400]} style={{margin: '10px'}}>
                         <Typography>{profile.description}</Typography>
@@ -155,4 +151,4 @@ const StockProfile = () => {
     );
 };
 
-export default StockProfile;
+export default MyPortfolio;

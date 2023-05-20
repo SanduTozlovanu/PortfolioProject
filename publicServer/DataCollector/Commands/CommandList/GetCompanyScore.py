@@ -28,7 +28,7 @@ class GetCompanyScore(Command, ABC):
             self.prepareRequest(i, collect_list)
             result = requests.get(self.url)
             if result.status_code == 200:
-                self.collectData(result.json())
+                self.collectData(result.json(), collect_list[i])
             else:
                 print(f"[GetCompanyScore] failed to get company score {result.status_code}")
                 return
@@ -38,9 +38,13 @@ class GetCompanyScore(Command, ABC):
         self.url = self.url.format(collecting_list[index])
 
     @staticmethod
-    def collectData(result):
+    def collectData(result, ticker):
         for scoreResult in result:
             score = Score(ticker=scoreResult["symbol"], altmanZScore=scoreResult["altmanZScore"],
                           piotroskiScore=scoreResult['piotroskiScore'])
+            db.add(score)
+        if len(result) == 0:
+            score = Score(ticker=ticker, altmanZScore=5.64,
+                          piotroskiScore=5)
             db.add(score)
         db.commit()

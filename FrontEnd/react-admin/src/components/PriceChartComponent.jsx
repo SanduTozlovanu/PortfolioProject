@@ -31,9 +31,9 @@ const PriceChartComponent = ({stock_name}) => {
     }
     if (isLoading) {
         return (
-            <div style={{display: 'flex', justifyContent: 'center'}}>
-                <CircularProgress status="loading"/>
-            </div>
+            <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"80vh"}}>
+                <CircularProgress sx={{color: colors.primary[300]}} />
+            </Box>
         );
     }
 
