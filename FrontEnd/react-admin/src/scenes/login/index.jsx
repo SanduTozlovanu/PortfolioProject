@@ -67,7 +67,7 @@ const Login = () => {
         marginBottom: 20,
     };
 
-    const registerBtnStyle = {
+    const loginBtnStyle = {
         marginTop: 16,
         color: colors.primary[500],
         fontSize: 20,
@@ -102,7 +102,7 @@ const Login = () => {
                 <Button
                     variant="contained"
                     size="large"
-                    style={registerBtnStyle}
+                    style={loginBtnStyle}
                     onClick={login}
                 >
                     Login

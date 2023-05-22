@@ -10,7 +10,7 @@ from pymongo import MongoClient
 
 import jwt
 import requests
-from flask import make_response, request
+from flask import make_response, request, jsonify
 from flask_cors import cross_origin
 from requests import Response
 from sqlalchemy import and_
@@ -18,6 +18,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from JWTHelper import JWTHandler
 from privateServer import mailSender
+from privateServer.DTOs.PieChartDto import PieChartDto
+from privateServer.DTOs.PortfolioSelectDataDto import PortfolioSelectDataDto
 from privateServer.app import db, create_app
 from privateServer.app.models import User, Stock, Transaction, Portfolio
 
@@ -176,6 +178,31 @@ def confirm():
         return make_response("Server error", 500)
 
 
+@app.route('/portfolio/select', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_portfolio_select_data():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        tickers_to_return = []
+        portfolio_select_data_list: list[Stock] = Stock.query.filter(
+            Stock.portfolio_id == portfolio.id).all()
+        company_list = ""
+        for stock in portfolio_select_data_list:
+            company_list += (stock.ticker + ",")
+        company_list = company_list[:-1]
+        response_json = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/price/" + company_list).json()
+
+        for stock in portfolio_select_data_list:
+            tickers_to_return.append(
+                PortfolioSelectDataDto(stock.ticker, stock.ticker, response_json[stock.ticker], stock.quantity))
+        return make_response(jsonify([tickerSelectDto.__dict__ for tickerSelectDto in tickers_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
 @app.route('/portfolio/stock/buy', methods=['POST'])
 @cross_origin()
 @jwt_required
@@ -240,6 +267,45 @@ def sell_stock():
         return make_response("Server Error", 500)
 
 
+@app.route('/stock/personalised', methods=['GET'])
+@jwt_required
+@cross_origin()
+def get_personalised_stocks():
+    email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+    portfolio: Portfolio = Portfolio.get_portfolio(email)
+    ticker_list = ""
+    stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+    if len(stock_list) > 0:
+        for stock in stock_list:
+            ticker_list += (stock.ticker + ",")
+        ticker_list = ticker_list[:-1]
+        return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/similar/" + ticker_list))
+    return make_response([], 200)
+
+
+@app.route('/portfolio/chart/holdings', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_portfolio_pieChart():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        stocks: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+        chart_data = [PieChartDto("CASH", portfolio.money)]
+        for stock in stocks:
+            chart_data.append(PieChartDto(stock.ticker, stock.quantity * stock.medium_buy_price))
+        return make_response(jsonify([pie_dto.__dict__ for pie_dto in chart_data]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/stock/select', methods=['GET'])
+@cross_origin()
+def get_companies_select_data():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/select"))
+
+
 @app.route('/stock/details/<company_ticker>', methods=['GET'])
 @cross_origin()
 def get_company_details(company_ticker):
@@ -291,7 +357,19 @@ def search_companies(company):
 @app.route('/stock/search', methods=['GET'])
 @cross_origin()
 def search_query():
-    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search", request=request))
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search"))
+
+
+@app.route('/stock/gainers', methods=['GET'])
+@cross_origin()
+def get_top_gainers():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/gainers"))
+
+
+@app.route('/stock/losers', methods=['GET'])
+@cross_origin()
+def get_top_losers():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/losers"))
 
 
 def app_run():

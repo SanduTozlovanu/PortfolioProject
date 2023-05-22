@@ -10,10 +10,10 @@ from publicServer.config.constants import API_ENDPOINT, ONE_MINUTE
 from publicServer.config.definitions import KEY_URL
 
 
-class GetStockPrice(Command, ABC):
+class GetPriceChange(Command, ABC):
     def __init__(self):
         super().__init__(ONE_MINUTE, 2, 1)
-        self.url = API_ENDPOINT + "v3/quote-short/{}?" + KEY_URL
+        self.url = API_ENDPOINT + "v3/stock-price-change/{}?" + KEY_URL
 
     def execute(self):
         self.prepareRequest()
@@ -21,7 +21,7 @@ class GetStockPrice(Command, ABC):
         if result.status_code == 200:
             self.collectData(result.json())
         else:
-            print(f"[GetStockPrice] failed to get stock price {result.status_code}")
+            print(f"[GetPriceChange] failed to get stock price change {result.status_code}")
 
     def prepareRequest(self):
         ticker_list = ""
@@ -32,11 +32,11 @@ class GetStockPrice(Command, ABC):
     @staticmethod
     def collectData(result):
         for elem in result:
-            stock_price = StockPrice(ticker=elem["symbol"], price=elem["price"], change=0)
-            result: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == stock_price.ticker).first()
+            stock_price_change = StockPrice(ticker=elem["symbol"], price=0, change=elem["1D"])
+            result: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == stock_price_change.ticker).first()
             if result:
-                result.price = stock_price.price
+                result.change = stock_price_change.change
                 result.update(result)
             else:
-                db.add(stock_price)
+                db.add(stock_price_change)
         db.commit()

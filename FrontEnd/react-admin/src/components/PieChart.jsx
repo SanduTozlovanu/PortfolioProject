@@ -1,14 +1,46 @@
 import { ResponsivePie } from "@nivo/pie";
 import { tokens } from "../theme";
-import { useTheme } from "@mui/material";
-import { mockPieData as data } from "../data/mockData";
+import {Box, CircularProgress, useTheme} from "@mui/material";
+import React, {useEffect, useState} from "react";
+import axios from "axios";
+import config from "../config.json";
 
 const PieChart = () => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
+  const [chartData, setChartData] = useState([]);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    GetPieChartData()
+  }, []);
+  const GetPieChartData = async () => {
+    try{
+      const response = await axios.get(`${config.url}/portfolio/chart/holdings`, {
+        headers: {
+          Authorization: JSON.parse(localStorage.getItem("user")).token,
+        },
+      });
+      setChartData(response.data)
+      setIsLoading(false)
+      setError("")
+    } catch(error){
+      console.log(error)
+      setIsLoading(false)
+      setError("Failed to get financial stats!")
+    }
+  }
+  if (isLoading) {
+    return (
+        <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"30vh"}}>
+          <CircularProgress sx={{color: colors.primary[300]}} />
+        </Box>
+    );
+  }
   return (
     <ResponsivePie
-      data={data}
+      data={chartData}
       theme={{
         axis: {
           domain: {
@@ -31,13 +63,13 @@ const PieChart = () => {
             },
           },
         },
-        legends: {
-          text: {
-            fill: colors.grey[100],
+        tooltip: {
+          container: {
+            color: colors.grey[900],
           },
         },
       }}
-      margin={{ top: 40, right: 80, bottom: 80, left: 80 }}
+      margin={{ top: 20, right: 80, bottom: 80, left: 20 }}
       innerRadius={0.5}
       padAngle={0.7}
       cornerRadius={3}
@@ -57,51 +89,6 @@ const PieChart = () => {
         from: "color",
         modifiers: [["darker", 2]],
       }}
-      defs={[
-        {
-          id: "dots",
-          type: "patternDots",
-          background: "inherit",
-          color: "rgba(255, 255, 255, 0.3)",
-          size: 4,
-          padding: 1,
-          stagger: true,
-        },
-        {
-          id: "lines",
-          type: "patternLines",
-          background: "inherit",
-          color: "rgba(255, 255, 255, 0.3)",
-          rotation: -45,
-          lineWidth: 6,
-          spacing: 10,
-        },
-      ]}
-      legends={[
-        {
-          anchor: "bottom",
-          direction: "row",
-          justify: false,
-          translateX: 0,
-          translateY: 56,
-          itemsSpacing: 0,
-          itemWidth: 100,
-          itemHeight: 18,
-          itemTextColor: "#999",
-          itemDirection: "left-to-right",
-          itemOpacity: 1,
-          symbolSize: 18,
-          symbolShape: "circle",
-          effects: [
-            {
-              on: "hover",
-              style: {
-                itemTextColor: "#000",
-              },
-            },
-          ],
-        },
-      ]}
     />
   );
 };

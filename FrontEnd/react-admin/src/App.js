@@ -22,9 +22,14 @@ import MyPortfolio from "./scenes/myPortfolio";
 
 function App() {
     const [theme, colorMode] = useMode();
-    const [name, setName] = useState('');
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [name, setName] = useState(() => {
+        let user = JSON.parse(localStorage.getItem("user"))
+        if (!user)
+            return ""
+        return user.name
+    });
+    const [isCollapsed, setIsCollapsed] = useState(false)
+    const [isAuthenticated, setIsAuthenticated] = useState(!!(localStorage.getItem("user")));
     const handleToggleCollapse = (collapsed) => {
         setIsCollapsed(!collapsed)
     };

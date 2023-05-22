@@ -8,13 +8,15 @@ import requests
 import yfinance as yf
 from flask import make_response, request, Flask, jsonify
 from plotly import graph_objs as go
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from urllib.parse import urlencode
 
 from JWTHelper import JWTHandler
+from publicServer.DTOs.CompanySelectDataDto import CompanySelectDataDto
 from publicServer.DTOs.RevenueChartBarDto import RevenueChartBarDto
 from publicServer.DTOs.SearchStockDto import SearchStockDto
 from publicServer.DTOs.StockFinancesDto import StockFinancesDto
+from publicServer.DTOs.TickerPriceDto import TickerPriceDto
 from publicServer.DataCollector.Database.Models.Balance import Balance
 from publicServer.DataCollector.Database.Models.Company import Company
 from publicServer.DataCollector.Database.Models.CompanyProfile import CompanyProfile
@@ -88,6 +90,80 @@ def get_company_details(company_ticker):
         if company_profile is None:
             return make_response("Company not found", 404)
         return make_response(company_profile.as_dict(), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/losers', methods=['GET'])
+@jwt_required
+def get_top_losers():
+    try:
+        losers_to_return = []
+        stock_price_list: list[StockPrice] = db.query(StockPrice).order_by(StockPrice.change.asc()).limit(6).all()
+        for stock_price in stock_price_list:
+            losers_to_return.append(TickerPriceDto(stock_price.ticker, stock_price.change))
+        return make_response(jsonify([loserDto.__dict__ for loserDto in losers_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/gainers', methods=['GET'])
+@jwt_required
+def get_top_gainers():
+    try:
+        gainers_to_return = []
+        stock_price_list: list[StockPrice] = db.query(StockPrice).order_by(StockPrice.change.desc()).limit(6).all()
+        for stock_price in stock_price_list:
+            gainers_to_return.append(TickerPriceDto(stock_price.ticker, stock_price.change))
+        return make_response(jsonify([gainerDto.__dict__ for gainerDto in gainers_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/similar/<ticker_list>', methods=['GET'])
+@jwt_required
+def get_similar_stocks(ticker_list):
+    try:
+        similars_to_return = []
+        company_list = ticker_list.split(",")
+        similar_company_list = []
+        for company_ticker in company_list:
+            companyObject: CompanyProfile = db.query(CompanyProfile).filter(CompanyProfile.ticker == company_ticker).first()
+            similar_company_list += db.query(CompanyProfile).\
+                filter(and_(companyObject.sector == CompanyProfile.sector, companyObject.industry == CompanyProfile.industry,
+                            CompanyProfile.ticker != companyObject.ticker)).limit(6 - len(similar_company_list)).all()
+
+            if len(similar_company_list) == 6:
+                break
+        if len(similar_company_list) < 6:
+            similar_company_list += db.query(CompanyProfile).filter(and_(CompanyProfile.sector == company_list[0],
+                                                                         CompanyProfile.ticker != company_list[0].ticker)).limit(6 - len(similar_company_list)).all()
+        similar_stock_price_list: list[StockPrice] = db.query(StockPrice).filter(or_(StockPrice.ticker == similar_company_list[0].ticker,
+                                                                                     StockPrice.ticker == similar_company_list[1].ticker,
+                                                                                     StockPrice.ticker == similar_company_list[2].ticker,
+                                                                                     StockPrice.ticker == similar_company_list[3].ticker,
+                                                                                     StockPrice.ticker == similar_company_list[4].ticker,
+                                                                                     StockPrice.ticker == similar_company_list[5].ticker)).all()
+        for company in similar_stock_price_list:
+            similars_to_return.append(TickerPriceDto(company.ticker, company.change))
+        return make_response(jsonify([similarDto.__dict__ for similarDto in similars_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/select', methods=['GET'])
+@jwt_required
+def get_companies_select_data():
+    try:
+        tickers_to_return = []
+        company_select_data_list: list = db.query(Company.ticker, Company.name, StockPrice.price).filter(Company.ticker == StockPrice.ticker).all()
+        for select_data in company_select_data_list:
+            tickers_to_return.append(CompanySelectDataDto(select_data["name"], select_data["ticker"], select_data["price"]))
+        return make_response(jsonify([tickerSelectDto.__dict__ for tickerSelectDto in tickers_to_return]), 200)
     except Exception as exc:
         print(exc)
         return make_response("Internal server error", 500)

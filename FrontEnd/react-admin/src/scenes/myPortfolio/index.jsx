@@ -1,48 +1,89 @@
-import {Box, Typography, Grid, Stack, CircularProgress, useTheme} from "@mui/material";
+import {Box, Typography, Grid, Stack, CircularProgress, useTheme, Divider, Button} from "@mui/material";
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import PeopleIcon from '@mui/icons-material/People';
-import EqualizerIcon from '@mui/icons-material/Equalizer';
-import TimelineIcon from '@mui/icons-material/Timeline';
-import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import {tokens} from "../../theme";
-import {useNavigate, useParams} from 'react-router-dom';
-import {useState, useEffect} from "react";
+import React, {useState, useEffect} from "react";
 import config from "../../config.json";
 import axios from "axios";
 import Topbar from "../global/Topbar";
 import StatBox from "../../components/StatBox";
-import FinancialStats from "../../components/FinancialStats";
-import PriceChartComponent from "../../components/PriceChartComponent";
-import RevenueBarChart from "../../components/RevenueBarChart";
-import PredictionChartComponent from "../../components/PredictionChartComponent";
+import PieChart from "../../components/PieChart";
+import BuyStockForm from "../../components/myPortfolio/BuyStockForm";
+import SellStockForm from "../../components/myPortfolio/SellStockForm";
+import TickerChangeComponent from "../../components/myPortfolio/TickerChangeComponent";
 
 const MyPortfolio = () => {
-    const [profile, setProfile] = useState({});
+    const [gainers, setGainers] = useState([]);
+    const [losers, setLosers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [stockBuyOpen, setStockBuyOpen] = useState(false);
+    const [stockSellOpen, setStockSellOpen] = useState(false);
     const [error, setError] = useState({});
+
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const navigate = useNavigate();
-    const stock_name = "AAPL";
-    const getMarketCap = () => {
-        const nr = (profile.mktCap / 1000000000).toFixed(1)
-        return nr + " Bln"
-    }
+
+    const buyStockBtnStyle = {
+        marginTop: 16,
+        color: colors.primary[500],
+        width: "100%",
+        fontSize: 19,
+        fontWeight: "bold",
+        backgroundColor: colors.greenAccent[400]
+    };
+
+    const sellStockBtnStyle = {
+        marginTop: 16,
+        width: "100%",
+        color: colors.primary[500],
+        fontSize: 19,
+        fontWeight: "bold",
+        backgroundColor: colors.redAccent[400]
+    };
+
+    const handleSellOpen = () => {
+        setStockSellOpen(true);
+    };
+
+    const handleSellClose = () => {
+        setStockSellOpen(false);
+    };
+
+    const handleBuyOpen = () => {
+        setStockBuyOpen(true);
+    };
+
+    const handleBuyClose = () => {
+        setStockBuyOpen(false);
+    };
 
     useEffect(() => {
-        getProfile()
+        getGainers();
+        getLosers();
     }, []);
 
-    const getProfile = async () => {
+
+    const getGainers = async () => {
         try {
-            const response = await axios.get(`${config.url}/stock/details/${stock_name}`);
-            setProfile(response.data)
+            const response = await axios.get(`${config.url}/stock/gainers`);
+            setGainers(response.data)
             setError("")
             setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get statement!")
+            setError("Failed to get gainers!")
+            setIsLoading(false)
+        }
+    }
+
+    const getLosers = async () => {
+        try {
+            const response = await axios.get(`${config.url}/stock/losers`);
+            setLosers(response.data)
+            setError("")
+            setIsLoading(false)
+        } catch (error) {
+            console.log(error)
+            setError("Failed to get losers!")
             setIsLoading(false)
         }
     }
@@ -56,97 +97,59 @@ const MyPortfolio = () => {
     }
     return (
         <Box m="20px">
-            <Topbar title="My Portfolio" subtitle="Portfolio Performance Analysis"
-                    ticker="myPortfolio"/>
+            <Topbar title="My Portfolio" subtitle="Portfolio Performance Analysis" ticker="myPortfolio"/>
             <Grid container spacing={1}>
                 <Grid item xs={7} md={7}>
-                    <Typography variant="h2" style={{textAlign: 'center'}}>Stats</Typography>
-                    <Grid container spacing={2} style={{marginTop: '1px'}}>
-                        <Grid item xs={6} md={6}>
-                            <StatBox
-                                title="Price"
-                                value={profile.price}
-                                icon={
-                                    <AttachMoneyIcon
-                                        sx={{color: colors.greenAccent[300], fontSize: "35px"}}
-                                    />
-                                }
-                            />
+                    <Grid container spacing={0} style={{marginTop: '1px'}}>
+                        <Grid item xs={9} md={9}>
+                            <Typography variant="h3" style={{textAlign: 'center'}}>Current Holdings</Typography>
+                            <Box height={370}>
+                                <PieChart/>
+                            </Box>
                         </Grid>
-                        <Grid item xs={6} md={6}>
+                        <Grid item xs={3.5} md={3.5} style={{marginTop: 70, marginLeft: -50}}>
                             <StatBox
-                                title="Market Cap"
-                                value={getMarketCap()}
+                                title="Total Value"
+                                value={"13644$"}
                                 icon={
                                     <LocalAtmIcon
                                         sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
                                     />
                                 }
                             />
-                        </Grid>
-                        <Grid item xs={6} md={6}>
-                            <StatBox
-                                title="Average Volume"
-                                value={profile.volAvg}
-                                icon={
-                                    <EqualizerIcon
-                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
-                                    />
-                                }
-                            />
-                        </Grid>
-                        <Grid item xs={6} md={6}>
-                            <StatBox
-                                title="Beta"
-                                value={profile.beta}
-                                icon={
-                                    <TimelineIcon
-                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
-                                    />
-                                }
-                            />
-                        </Grid>
-                        <Grid item xs={6} md={6}>
-                            <StatBox
-                                title="Employees"
-                                value={profile.fullTimeEmployees}
-                                icon={
-                                    <PeopleIcon
-                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
-                                    />
-                                }
-                            />
-                        </Grid>
-                        <Grid item xs={6} md={6}>
-                            <StatBox
-                                value={profile.exchange}
-                                icon={
-                                    <AccountBalanceIcon
-                                        sx={{color: theme.palette.secondary[100], fontSize: "35px"}}
-                                    />
-                                }
-                            />
+                            <Button variant="contained" size="large" style={buyStockBtnStyle} onClick={handleBuyOpen}>
+                                Buy Stocks
+                            </Button>
+                            <BuyStockForm open={stockBuyOpen} onClose={handleBuyClose} />
+                            <Button variant="contained" size="large" style={sellStockBtnStyle} onClick={handleSellOpen}>
+                                Sell Stocks
+                            </Button>
+                            <SellStockForm open={stockSellOpen} onClose={handleSellClose} />
                         </Grid>
                     </Grid>
                 </Grid>
-                <Grid item xs={5} md={5}>
-                    <Typography variant="h2" style={{textAlign: 'center'}}>Description</Typography>
-                    <Box backgroundColor={colors.primary[400]} style={{margin: '10px'}}>
-                        <Typography>{profile.description}</Typography>
-                    </Box>
+                <Box>
+                    <Divider orientation="vertical" sx={{height: "100%", my: 'auto', marginLeft: 2, backgroundColor: colors.primary[400]}}/>
+                </Box>
+                <Grid item xs={4.8} md={4.8}>
+                    <Typography variant="h3" style={{textAlign: 'center', marginBottom: 10}}>Top gainers today</Typography>
+                    <Grid container spacing={2}>
+                        {gainers.map((item, index) => (
+                            <Grid item xs={6} md={6}>
+                                <TickerChangeComponent ticker={item.ticker} change={item.change}/>
+                            </Grid>
+                        ))}
+                    </Grid>
+                    <Typography variant="h3" style={{textAlign: 'center', marginBottom: 10, marginTop: 10}}>Top losers today</Typography>
+                    <Grid container spacing={2}>
+                        {losers.map((item, index) => (
+                            <Grid item xs={6} md={6}>
+                                <TickerChangeComponent ticker={item.ticker} change={item.change}/>
+                            </Grid>
+                        ))}
+                    </Grid>
                 </Grid>
             </Grid>
-            <FinancialStats stock_name={stock_name}></FinancialStats>
-            <Grid container spacing={1} style={{marginTop: '10px'}}>
-                <Grid item xs={6} md={6}>
-                    <PriceChartComponent stock_name={stock_name}></PriceChartComponent>
-                </Grid>
-                <Grid item xs={6} md={6}>
-                    <RevenueBarChart stock_name={stock_name}/>
-                </Grid>
-            </Grid>
-            <PredictionChartComponent stock_name={stock_name}></PredictionChartComponent>
-
         </Box>
     );
 };

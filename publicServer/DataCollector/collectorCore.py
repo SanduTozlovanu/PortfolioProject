@@ -6,6 +6,7 @@ from publicServer.DataCollector.Commands.CommandList.GetCompanyRatios import Get
 from publicServer.DataCollector.Commands.CommandList.GetCompanyScore import GetCompanyScore
 from publicServer.DataCollector.Commands.CommandList.GetFinancialStatements import GetFinancialStatements
 from publicServer.DataCollector.Commands.CommandList.GetLatestNews import GetLatestNews
+from publicServer.DataCollector.Commands.CommandList.GetPriceChange import GetPriceChange
 from publicServer.DataCollector.Commands.CommandList.GetPricePrediction import GetPricePrediction
 from publicServer.DataCollector.Commands.CommandList.GetSNPList import GetSNPList
 from publicServer.DataCollector.Commands.CommandList.GetStockPrice import GetStockPrice
@@ -13,14 +14,15 @@ from publicServer.DataCollector.Commands.CommandList.GetStockPrice import GetSto
 
 def runCollector():
     api_invoker = APIInvoker()
-    api_invoker.register(GetSNPList())
-    api_invoker.register(GetCompanyProfile())
-    api_invoker.register(GetLatestNews())
-    api_invoker.register(GetFinancialStatements())
+    #api_invoker.register(GetSNPList())
+    #api_invoker.register(GetCompanyProfile())
+    #api_invoker.register(GetLatestNews())
+    #api_invoker.register(GetFinancialStatements())
     api_invoker.register(GetStockPrice())
-    api_invoker.register(GetCompanyKeyMetrics())
-    api_invoker.register(GetCompanyRatios())
+    #api_invoker.register(GetCompanyKeyMetrics())
+    #api_invoker.register(GetCompanyRatios())
     api_invoker.register(GetCompanyScore())
-    api_invoker.register(GetCompanyBalance())
-    api_invoker.register(GetPricePrediction())
+    #api_invoker.register(GetCompanyBalance())
+    #api_invoker.register(GetPricePrediction())
+    api_invoker.register(GetPriceChange())
     api_invoker.execute()
