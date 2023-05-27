@@ -2,11 +2,8 @@ import React, {useState} from "react";
 import {Navigate, Route, Routes} from "react-router-dom";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
-import Team from "./scenes/team";
 import StockScreener from "./scenes/stockScreener";
-import Contacts from "./scenes/contacts";
 import Bar from "./scenes/bar";
-import Form from "./scenes/form";
 import Line from "./scenes/line";
 import Pie from "./scenes/pie";
 import {CssBaseline, ThemeProvider} from "@mui/material";
@@ -53,10 +50,7 @@ function App() {
                                 <Route path="/register" element={<Register/>}/>
                                 <Route path="/confirm" element={<Confirm/>}/>
                                 <Route path="/login" element={<Login/>}/>
-                                <Route path="/team" element={<Team/>}/>
-                                <Route path="/contacts" element={<Contacts/>}/>
                                 <Route path="/stockScreener" element={<StockScreener/>}/>
-                                <Route path="/form" element={<Form/>}/>
                                 <Route path="/bar" element={<Bar/>}/>
                                 <Route path="/pie" element={<Pie/>}/>
                                 <Route path="/line" element={<Line/>}/>

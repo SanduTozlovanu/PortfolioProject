@@ -1,5 +1,5 @@
 import {useContext, useState} from "react";
-import {ProSidebar, Menu, MenuItem} from "react-pro-sidebar";
+import {Menu, MenuItem, ProSidebar} from "react-pro-sidebar";
 import {Box, IconButton, Typography, useTheme} from "@mui/material";
 import {Link} from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
@@ -39,7 +39,7 @@ const Item = ({title, to, icon, selected, setSelected}) => {
 function Sidebar({onToggleCollapse}) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const { isAuthenticated, setIsAuthenticated, name, setName } = useContext(Authcontext);
+    const {isAuthenticated, setIsAuthenticated, name, setName} = useContext(Authcontext);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [selected, setSelected] = useState("Dashboard");
 
@@ -89,7 +89,8 @@ function Sidebar({onToggleCollapse}) {
                                 alignItems="center"
                                 ml="15px"
                             >
-                                <Typography variant="h3" color={colors.grey[100]}>{isAuthenticated ? 'User' : 'Unlogged User'}
+                                <Typography variant="h3"
+                                            color={colors.grey[100]}>{isAuthenticated ? 'User' : 'Unlogged User'}
                                 </Typography>
                                 <IconButton onClick={() => {
                                     setIsCollapsed(!isCollapsed)

@@ -35,7 +35,6 @@ const Topbar = ({title, subtitle, ticker, isTicker}) => {
                 />
             </Box>
 
-            {/* ICONS */}
             <Box display="flex">
                 <Box>
                     <IconButton onClick={colorMode.toggleColorMode}>

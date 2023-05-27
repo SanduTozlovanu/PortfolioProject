@@ -98,7 +98,6 @@ const RevenueBarChart = ({stock_name}) => {
                     legendOffset: -53
                 }}
                 theme={{
-                    // added
                     axis: {
                         domain: {
                             line: {

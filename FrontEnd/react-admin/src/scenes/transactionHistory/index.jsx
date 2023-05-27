@@ -1,7 +1,7 @@
 import {Box, Typography, IconButton, FormHelperText, useTheme} from "@mui/material";
 import {DataGrid} from "@mui/x-data-grid";
 import {tokens} from "../../theme";
-import {stockScreenerFilters} from "../../data/mockData";
+import {stockScreenerFilters} from "../../data/data";
 import { useNavigate } from 'react-router-dom';
 import Select from "../../components/SelectComponent";
 import {useState, useEffect} from "react";
