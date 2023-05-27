@@ -9,7 +9,6 @@ import Bar from "./scenes/bar";
 import Form from "./scenes/form";
 import Line from "./scenes/line";
 import Pie from "./scenes/pie";
-import FAQ from "./scenes/faq";
 import {CssBaseline, ThemeProvider} from "@mui/material";
 import {ColorModeContext, useMode} from "./theme";
 import StockProfile from "./scenes/stockProfile";
@@ -19,6 +18,8 @@ import Confirm from "./scenes/confirm";
 import Login from "./scenes/login";
 import AuthContext from './components/AuthContext';
 import MyPortfolio from "./scenes/myPortfolio";
+import News from "./scenes/news";
+import TransactionHistory from "./scenes/transactionHistory";
 
 function App() {
     const [theme, colorMode] = useMode();
@@ -46,6 +47,7 @@ function App() {
                             <Routes>
                                 <Route path="/" element={isAuthenticated ? (<Dashboard/>) : (<Navigate to="/welcome" replace/>)}/>
                                 <Route path="/myPortfolio" element={isAuthenticated ? (<MyPortfolio/>) : (<Navigate to="/login" replace/>)}/>
+                                <Route path="/transactions" element={isAuthenticated ? (<TransactionHistory/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/stockProfile/:stock_name" element={<StockProfile/>}/>
                                 <Route path="/welcome" element={<Welcome/>}/>
                                 <Route path="/register" element={<Register/>}/>
@@ -58,7 +60,7 @@ function App() {
                                 <Route path="/bar" element={<Bar/>}/>
                                 <Route path="/pie" element={<Pie/>}/>
                                 <Route path="/line" element={<Line/>}/>
-                                <Route path="/faq" element={<FAQ/>}/>
+                                <Route path="/news" element={<News/>}/>
                             </Routes>
                         </main>
                     </div>

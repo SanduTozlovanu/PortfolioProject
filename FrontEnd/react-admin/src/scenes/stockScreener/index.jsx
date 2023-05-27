@@ -40,6 +40,7 @@ const StockScreener = () => {
 
     const search = async () => {
         let queryParams = composeQueryParams()
+        console.log(queryParams)
 
         try{
             const response = await axios.get(`${config.url}/stock/search${queryParams}`);
@@ -133,7 +134,7 @@ const StockScreener = () => {
 
     return (
         <Box m="20px">
-            <Topbar title="STOCK SCREENER" subtitle="Search stocks based on criteria"/>
+            <Topbar title="STOCK SCREENER" subtitle="Search stocks based on criteria" ticker={'stockScreener'} isTicker={false}/>
             {
             <Box display="flex">
                 <Select

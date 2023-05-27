@@ -57,7 +57,7 @@ const StockProfile = () => {
     return (
         <Box m="20px">
             <Topbar title={profile.companyName} subtitle={profile.sector + ", " + profile.industry}
-                    ticker={stock_name}/>
+                    ticker={stock_name} isTicker={true}/>
             <Grid container spacing={1}>
                 <Grid item xs={5} md={5}>
                     <Typography variant="h2" style={{textAlign: 'center'}}>Stats</Typography>

@@ -1,10 +1,12 @@
 import configparser
-import datetime
+from datetime import datetime
 import functools
 import os
 import threading
 from random import randint
 from urllib.parse import urlencode
+from plotly import graph_objs as go
+import traceback
 
 from pymongo import MongoClient
 
@@ -20,8 +22,13 @@ from JWTHelper import JWTHandler
 from privateServer import mailSender
 from privateServer.DTOs.PieChartDto import PieChartDto
 from privateServer.DTOs.PortfolioSelectDataDto import PortfolioSelectDataDto
+from privateServer.DTOs.PortfolioStatsDto import PortfolioStatsDto
+from privateServer.DTOs.TickerPriceDto import TickerPriceDto
+from privateServer.DTOs.TransactionDto import TransactionDto
+from privateServer.PortfolioAnalyser import PortfolioAnalyser
 from privateServer.app import db, create_app
 from privateServer.app.models import User, Stock, Transaction, Portfolio
+from privateServer.contants import INITIAL_MONEY
 
 config = configparser.ConfigParser()
 config.read(os.path.join(os.getcwd(), "config.ini"))
@@ -31,6 +38,8 @@ confirmations = mongodb['confirmations']
 app = create_app()
 app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
+portfolio_analyser = PortfolioAnalyser()
+
 app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
 BASE_PUBLIC_ENDPOINT = "http://127.0.0.1:6000/api/"
 BASE_PREDICTION_ENDPOINT = "http://127.0.0.1:6001/api/"
@@ -113,7 +122,8 @@ def register():
         user_email = request.json["email"]
         user_password = request.json['password']
         user_name = request.json['name']
-        new_user = User(email=user_email, password=user_password, name=user_name, type="user", status=False)
+        new_user = User(email=user_email, password=user_password, name=user_name, type="user", status=False,
+                        created_on=datetime.now())
         random_number = randint(10000, 99999)
         confirmations.insert_one({'code': random_number, "email": user_email})
         mailSender.send_mail(user_email, random_number)
@@ -166,7 +176,7 @@ def confirm():
                     if user.status:
                         return make_response("User email is already confirmed!", 400)
                     user.status = True
-                    new_portfolio = Portfolio(user_id=user.id, money=10000)
+                    new_portfolio = Portfolio(user_id=user.id, money=INITIAL_MONEY)
                     db.session.add(new_portfolio)
                     db.session.commit()
                     return make_response("Succesfully confirmed", 200)
@@ -218,16 +228,16 @@ def buy_stock():
         stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
         if stock is None:
             new_stock = Stock(ticker=ticker, portfolio_id=portfolio.id, medium_buy_price=price,
-                              buy_date=datetime.datetime.now(), quantity=quantity)
+                              buy_date=datetime.now(), quantity=quantity)
             db.session.add(new_stock)
         else:
             stock.medium_buy_price = (stock.medium_buy_price * stock.quantity + price * quantity) / (
                     quantity + stock.quantity)
             stock.quantity += quantity
+        portfolio.money -= (quantity * price)
         new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price,
-                                      date=datetime.datetime.now(),
-                                      quantity=quantity, is_buy=True)
-        portfolio.money -= new_transaction.total_price
+                                      date=datetime.now(),
+                                      quantity=quantity, is_buy=True, cash_after_transaction=portfolio.money)
         db.session.add(new_transaction)
         db.session.commit()
         return make_response("Succesfully bought", 200)
@@ -255,10 +265,10 @@ def sell_stock():
             stock.quantity -= quantity
             if stock.quantity == 0:
                 db.session.delete(stock)
+        portfolio.money += (quantity * price)
         new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price,
-                                      date=datetime.datetime.now(),
-                                      quantity=quantity, is_buy=False)
-        portfolio.money += new_transaction.total_price
+                                      date=datetime.now(),
+                                      quantity=quantity, is_buy=False, cash_after_transaction=portfolio.money)
         db.session.add(new_transaction)
         db.session.commit()
         return make_response("Succesfully sold", 200)
@@ -268,19 +278,69 @@ def sell_stock():
 
 
 @app.route('/stock/personalised', methods=['GET'])
-@jwt_required
 @cross_origin()
+@jwt_required
 def get_personalised_stocks():
-    email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
-    portfolio: Portfolio = Portfolio.get_portfolio(email)
-    ticker_list = ""
-    stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
-    if len(stock_list) > 0:
-        for stock in stock_list:
-            ticker_list += (stock.ticker + ",")
-        ticker_list = ticker_list[:-1]
-        return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/similar/" + ticker_list))
-    return make_response([], 200)
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio: Portfolio = Portfolio.get_portfolio(email)
+        ticker_list = ""
+        stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+        if len(stock_list) > 0:
+            for stock in stock_list:
+                ticker_list += (stock.ticker + ",")
+            ticker_list = ticker_list[:-1]
+            return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/similar/" + ticker_list))
+        return make_response([], 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/portfolio/stock/performance', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_portfolio_holdings():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio: Portfolio = Portfolio.get_portfolio(email)
+        ticker_list = ""
+        stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+        list_to_return = []
+        if len(stock_list) > 0:
+            for stock in stock_list:
+                ticker_list += (stock.ticker + ",")
+            ticker_list = ticker_list[:-1]
+            response_json = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/price/" + ticker_list).json()
+            for ticker in response_json:
+                for stock in stock_list:
+                    if stock.ticker == ticker:
+                        list_to_return.append(TickerPriceDto(ticker, round(
+                            (1 - stock.medium_buy_price / response_json[ticker]) * 100, 2)))
+        return make_response(jsonify([tickerDto.__dict__ for tickerDto in list_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/portfolio/chart/performance', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_portfolio_performance_chart():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        transactions: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).order_by(
+            Transaction.date.asc()).all()
+        user: User = User.query.filter(User.email == email).first()
+        df = portfolio_analyser.create_chart_data(transactions, user.created_on)
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df['Date'], y=df['Value'], name="Stock Value"))
+        fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
+        return make_response(fig.to_json(), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
 
 
 @app.route('/portfolio/chart/holdings', methods=['GET'])
@@ -295,6 +355,65 @@ def get_portfolio_pieChart():
         for stock in stocks:
             chart_data.append(PieChartDto(stock.ticker, stock.quantity * stock.medium_buy_price))
         return make_response(jsonify([pie_dto.__dict__ for pie_dto in chart_data]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/portfolio/stats', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_portfolio_stats():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        transactions: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).order_by(
+            Transaction.date.asc()).all()
+        user: User = User.query.filter(User.email == email).first()
+        stocks: Stock = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+        stats: PortfolioStatsDto = portfolio_analyser.get_portfolio_stats(len(stocks), transactions, user.created_on)
+        return make_response(jsonify(stats.__dict__), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/news', methods=['GET'])
+@cross_origin()
+def get_latest_news():
+    try:
+        if "Authorization" in request.headers:
+            email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+            portfolio = Portfolio.get_portfolio(email)
+            stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+            ticker_list = ""
+            if len(stock_list) > 0:
+                for stock in stock_list:
+                    ticker_list += (stock.ticker + ",")
+                ticker_list = ticker_list[:-1]
+                return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "news/" + ticker_list))
+
+        return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "news/all"))
+    except Exception as exc:
+        print(exc)
+        return make_response("Server Error", 500)
+
+
+@app.route('/transactions', methods=['GET'])
+@cross_origin()
+@jwt_required
+def get_transaction_history():
+    try:
+        transaction_dto_list: list[TransactionDto] = []
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        portfolio = Portfolio.get_portfolio(email)
+        transactions: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).order_by(
+            Transaction.date.desc()).all()
+        for transaction in transactions:
+            transaction_dto_list.append(TransactionDto(id=len(transaction_dto_list) + 1, date=transaction.date,
+                                                       is_buy=transaction.is_buy, piece_price=transaction.piece_price,
+                                                       quantity=transaction.quantity, ticker=transaction.ticker))
+        return make_response(jsonify([transaction_dto.__dict__ for transaction_dto in transaction_dto_list]), 200)
     except Exception as exc:
         print(exc)
         return make_response("Server Error", 500)
@@ -357,7 +476,7 @@ def search_companies(company):
 @app.route('/stock/search', methods=['GET'])
 @cross_origin()
 def search_query():
-    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search"))
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search", request=request))
 
 
 @app.route('/stock/gainers', methods=['GET'])

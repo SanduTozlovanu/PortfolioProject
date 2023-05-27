@@ -1,5 +1,6 @@
 import functools
 import json
+import random
 import threading
 from sqlite3 import Row
 
@@ -17,11 +18,13 @@ from publicServer.DTOs.RevenueChartBarDto import RevenueChartBarDto
 from publicServer.DTOs.SearchStockDto import SearchStockDto
 from publicServer.DTOs.StockFinancesDto import StockFinancesDto
 from publicServer.DTOs.TickerPriceDto import TickerPriceDto
+from publicServer.DTOs.NewsDto import NewsDto
 from publicServer.DataCollector.Database.Models.Balance import Balance
 from publicServer.DataCollector.Database.Models.Company import Company
 from publicServer.DataCollector.Database.Models.CompanyProfile import CompanyProfile
 from publicServer.DataCollector.Database.Models.FinancialStatement import FinancialStatement
 from publicServer.DataCollector.Database.Models.KeyMetrics import KeyMetrics
+from publicServer.DataCollector.Database.Models.LatestNew import LatestNew
 from publicServer.DataCollector.Database.Models.PricePrediction import PricePrediction
 from publicServer.DataCollector.Database.Models.Ratios import Ratios
 from publicServer.DataCollector.Database.Models.Score import Score
@@ -130,23 +133,28 @@ def get_similar_stocks(ticker_list):
         similars_to_return = []
         company_list = ticker_list.split(",")
         similar_company_list = []
+        companyObject = None
         for company_ticker in company_list:
-            companyObject: CompanyProfile = db.query(CompanyProfile).filter(CompanyProfile.ticker == company_ticker).first()
-            similar_company_list += db.query(CompanyProfile).\
-                filter(and_(companyObject.sector == CompanyProfile.sector, companyObject.industry == CompanyProfile.industry,
-                            CompanyProfile.ticker != companyObject.ticker)).limit(6 - len(similar_company_list)).all()
+            companyObject: CompanyProfile = db.query(CompanyProfile).filter(
+                CompanyProfile.ticker == company_ticker).first()
+            similar_company_list += db.query(CompanyProfile). \
+                filter(
+                and_(companyObject.sector == CompanyProfile.sector, companyObject.industry == CompanyProfile.industry,
+                     CompanyProfile.ticker != companyObject.ticker)).limit(6 - len(similar_company_list)).all()
 
             if len(similar_company_list) == 6:
                 break
         if len(similar_company_list) < 6:
-            similar_company_list += db.query(CompanyProfile).filter(and_(CompanyProfile.sector == company_list[0],
-                                                                         CompanyProfile.ticker != company_list[0].ticker)).limit(6 - len(similar_company_list)).all()
-        similar_stock_price_list: list[StockPrice] = db.query(StockPrice).filter(or_(StockPrice.ticker == similar_company_list[0].ticker,
-                                                                                     StockPrice.ticker == similar_company_list[1].ticker,
-                                                                                     StockPrice.ticker == similar_company_list[2].ticker,
-                                                                                     StockPrice.ticker == similar_company_list[3].ticker,
-                                                                                     StockPrice.ticker == similar_company_list[4].ticker,
-                                                                                     StockPrice.ticker == similar_company_list[5].ticker)).all()
+            similar_company_list += db.query(CompanyProfile).filter(and_(CompanyProfile.sector == companyObject.sector,
+                                                                         CompanyProfile.ticker != companyObject.ticker)).limit(
+                6 - len(similar_company_list)).all()
+        similar_stock_price_list: list[StockPrice] = db.query(StockPrice).filter(
+            or_(StockPrice.ticker == similar_company_list[0].ticker,
+                StockPrice.ticker == similar_company_list[1].ticker,
+                StockPrice.ticker == similar_company_list[2].ticker,
+                StockPrice.ticker == similar_company_list[3].ticker,
+                StockPrice.ticker == similar_company_list[4].ticker,
+                StockPrice.ticker == similar_company_list[5].ticker)).all()
         for company in similar_stock_price_list:
             similars_to_return.append(TickerPriceDto(company.ticker, company.change))
         return make_response(jsonify([similarDto.__dict__ for similarDto in similars_to_return]), 200)
@@ -160,9 +168,11 @@ def get_similar_stocks(ticker_list):
 def get_companies_select_data():
     try:
         tickers_to_return = []
-        company_select_data_list: list = db.query(Company.ticker, Company.name, StockPrice.price).filter(Company.ticker == StockPrice.ticker).all()
+        company_select_data_list: list = db.query(Company.ticker, Company.name, StockPrice.price).filter(
+            Company.ticker == StockPrice.ticker).all()
         for select_data in company_select_data_list:
-            tickers_to_return.append(CompanySelectDataDto(select_data["name"], select_data["ticker"], select_data["price"]))
+            tickers_to_return.append(
+                CompanySelectDataDto(select_data["name"], select_data["ticker"], select_data["price"]))
         return make_response(jsonify([tickerSelectDto.__dict__ for tickerSelectDto in tickers_to_return]), 200)
     except Exception as exc:
         print(exc)
@@ -261,6 +271,25 @@ def get_companies_price(company_list):
         return make_response("Internal server error", 500)
 
 
+@app.route('/api/stock/priceChange/<company_tickers>', methods=['GET'])
+@jwt_required
+def get_tickers_price_change(company_tickers):
+    try:
+        response_list = []
+        company_list = company_tickers.split(",")
+        for ticker in company_list:
+            stockPrice = db.query(StockPrice).filter(
+                StockPrice.ticker == ticker).first()
+            if stockPrice is None:
+                return make_response("ticker not found", 404)
+            response_list.append(TickerPriceDto(ticker, stockPrice.change))
+
+        return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
 @app.route('/api/stock/chart/price/<company_ticker>', methods=['GET'])
 @jwt_required
 def get_company_price_chart(company_ticker):
@@ -271,7 +300,6 @@ def get_company_price_chart(company_ticker):
         data = yf.download(company_ticker, period="max")
         data.reset_index(inplace=True)
         fig = go.Figure()
-        fig.add_trace(go.Scatter(x=data['Date'], y=data['Open'], name="stock_open"))
         fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
         fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
         return make_response(fig.to_json(), 200)
@@ -346,6 +374,7 @@ def get_search_stocks(company):
 def search_query():
     try:
         query_string = urlencode(request.args)
+        url = API_ENDPOINT + "v3/stock-screener?" + query_string + "&" + KEY_URL
         response = requests.get(API_ENDPOINT + "v3/stock-screener?" + query_string + "&" + KEY_URL).json()
         company_profiles = db.query(CompanyProfile.ticker).all()
         companies_to_return = []
@@ -364,6 +393,43 @@ def search_query():
                     break
 
         return make_response(jsonify([company_dto.__dict__ for company_dto in companies_to_return]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/news/<ticker_list>', methods=['GET'])
+@jwt_required
+def get_latest_news(ticker_list):
+    try:
+        news_dtos: list[NewsDto] = []
+        if ticker_list == "all":
+            latest_news_list: list[LatestNew] = db.query(LatestNew).order_by(LatestNew.date.desc()).limit(40).all()
+            for new in latest_news_list:
+                stock_price: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == new.ticker).first()
+                if stock_price is None:
+                    return make_response("ticker stock price not found", 404)
+                news_dtos.append(NewsDto(ticker=new.ticker, change=stock_price.change, date=new.date, image=new.image,
+                                         text=new.text, url=new.url, title=new.title, site=new.site))
+        else:
+            ticker_list = ticker_list.split(",")
+            latest_news_list: list[LatestNew] = []
+            titles_used = []
+            for ticker in ticker_list:
+                new_list = db.query(LatestNew).filter(LatestNew.ticker == ticker).order_by(LatestNew.date.desc()).limit(2).all()
+                for new in new_list:
+                    titles_used.append(new.title)
+                latest_news_list += new_list
+            latest_news_list += db.query(LatestNew).filter(LatestNew.title not in titles_used).order_by(LatestNew.date.desc()).limit(40 - len(latest_news_list)).all()
+            for new in latest_news_list:
+                stock_price: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == new.ticker).first()
+                if stock_price is None:
+                    return make_response("ticker stock price not found", 404)
+                news_dtos.append(NewsDto(ticker=new.ticker, change=stock_price.change, date=new.date, image=new.image,
+                                         text=new.text, url=new.url, title=new.title, site=new.site))
+
+        news_dtos.sort(key=lambda dto: dto.date, reverse=True)
+        return make_response(jsonify([new_dto.__dict__ for new_dto in news_dtos]), 200)
     except Exception as exc:
         print(exc)
         return make_response("Internal server error", 500)

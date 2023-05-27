@@ -24,6 +24,7 @@ period = n_years * 365
 def load_data(ticker):
     data = yf.download(ticker, period="5y")
     data.reset_index(inplace=True)
+    print(data["Date"])
     return data
 
 

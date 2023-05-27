@@ -1,9 +1,9 @@
 import { ResponsivePie } from "@nivo/pie";
-import { tokens } from "../theme";
+import { tokens } from "../../theme";
 import {Box, CircularProgress, useTheme} from "@mui/material";
 import React, {useEffect, useState} from "react";
 import axios from "axios";
-import config from "../config.json";
+import config from "../../config.json";
 
 const PieChart = () => {
   const theme = useTheme();

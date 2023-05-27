@@ -8,15 +8,13 @@ import AccessibilityIcon from '@mui/icons-material/Accessibility';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import LoginIcon from '@mui/icons-material/Login';
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
-import PeopleOutlinedIcon from "@mui/icons-material/PeopleOutlined";
-import ContactsOutlinedIcon from "@mui/icons-material/ContactsOutlined";
-import ReceiptOutlinedIcon from "@mui/icons-material/ReceiptOutlined";
-import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
-import HelpOutlineOutlinedIcon from "@mui/icons-material/HelpOutlineOutlined";
+import NewspaperIcon from '@mui/icons-material/Newspaper';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
+import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import WorkIcon from '@mui/icons-material/Work';
 import Authcontext from "../../components/AuthContext";
 
@@ -159,23 +157,16 @@ function Sidebar({onToggleCollapse}) {
                             Data
                         </Typography>
                         <Item
-                            title="Manage Team"
-                            to="/team"
-                            icon={<PeopleOutlinedIcon/>}
-                            selected={selected}
-                            setSelected={setSelected}
-                        />
-                        <Item
-                            title="Contacts Information"
-                            to="/contacts"
-                            icon={<ContactsOutlinedIcon/>}
+                            title="News Articles"
+                            to="/news"
+                            icon={<NewspaperIcon/>}
                             selected={selected}
                             setSelected={setSelected}
                         />
                         <Item
                             title="Stock Screener"
                             to="/stockScreener"
-                            icon={<ReceiptOutlinedIcon/>}
+                            icon={<QueryStatsIcon/>}
                             selected={selected}
                             setSelected={setSelected}
                         />
@@ -195,9 +186,9 @@ function Sidebar({onToggleCollapse}) {
                             setSelected={setSelected}
                         />}
                         {isAuthenticated && <Item
-                            title="FAQ Page"
-                            to="/faq"
-                            icon={<HelpOutlineOutlinedIcon/>}
+                            title="Transaction History"
+                            to="/transactions"
+                            icon={<ReceiptLongIcon/>}
                             selected={selected}
                             setSelected={setSelected}
                         />}
