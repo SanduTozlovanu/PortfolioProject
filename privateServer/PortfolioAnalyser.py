@@ -6,7 +6,6 @@ import pandas as pd
 from privateServer.DTOs.PortfolioStatsDto import PortfolioStatsDto
 from privateServer.DataframeCollector import DataframeCollector
 from privateServer.app.models import Transaction
-from privateServer.contants import INITIAL_MONEY
 
 
 class HoldPeriod:
@@ -24,12 +23,12 @@ class PortfolioAnalyser:
     def __init__(self):
         self.dataframe_collector = DataframeCollector()
 
-    def create_chart_data(self, transaction_list: list[Transaction], creation_time: datetime):
+    def create_chart_data(self, transaction_list: list[Transaction], creation_time: datetime, money: float):
         hold_periods = PortfolioAnalyser.__generateHoldPeriods(transaction_list)
         df = self.dataframe_collector.get("AAPL", start=creation_time.strftime("%Y-%m-%d"))
         df["Close"] = np.nan
         df = df.rename(columns={'Close': 'Value'})
-        PortfolioAnalyser.__initDataframeCash(df, transaction_list)
+        PortfolioAnalyser.__initDataframeCash(df, transaction_list, money)
         print(df)
 
         for hold_period in hold_periods:
@@ -66,17 +65,17 @@ class PortfolioAnalyser:
         return df
 
     def get_portfolio_stats(self, holdings_count: int, transaction_list: list[Transaction],
-                            creation_time: datetime) -> PortfolioStatsDto:
-        df = self.create_chart_data(transaction_list, creation_time)
+                            creation_time: datetime, money: float) -> PortfolioStatsDto:
+        df = self.create_chart_data(transaction_list, creation_time, money)
         current_value = df['Value'].iloc[-1]
-        portfolio_return = (current_value - INITIAL_MONEY) / INITIAL_MONEY * 100
+        portfolio_return = (current_value - money) / money * 100
         snp_data = self.__get_snp_data(df['Date'].iloc[0])
         snp_change = PortfolioAnalyser.__get_snp_percentage_change(snp_data)
         portfolio_beta = PortfolioAnalyser.__get_portfolio_beta(df, snp_data)
         highest_value = df['Value'].max()
         lowest_value = df['Value'].min()
 
-        return PortfolioStatsDto(initialValue=INITIAL_MONEY, currentValue=current_value, holdings=holdings_count,
+        return PortfolioStatsDto(initialValue=money, currentValue=current_value, holdings=holdings_count,
                                  beta=portfolio_beta, portfolioReturn=portfolio_return, snpReturn=snp_change,
                                  highestValue=highest_value, lowestValue=lowest_value)
 
@@ -139,19 +138,19 @@ class PortfolioAnalyser:
         return hold_periods_to_return
 
     @staticmethod
-    def __initDataframeCash(df, transaction_list: list[Transaction]):
+    def __initDataframeCash(df, transaction_list: list[Transaction], money):
         df['Date'] = pd.to_datetime(df['Date'])
         date = None
         cash_before = None
         if len(transaction_list) == 0:
-            df["Value"] = INITIAL_MONEY
+            df["Value"] = money
             return df
         for transaction in transaction_list:
             if date is not None:
                 df.loc[
                     (df['Date'] >= date) & (df['Date'] < transaction.date.strftime("%Y-%m-%d")), 'Value'] = cash_before
             else:
-                df.loc[df['Date'] < transaction.date.strftime("%Y-%m-%d"), 'Value'] = INITIAL_MONEY
+                df.loc[df['Date'] < transaction.date.strftime("%Y-%m-%d"), 'Value'] = money
             date = transaction.date.strftime("%Y-%m-%d")
             cash_before = transaction.cash_after_transaction
         df.loc[df['Date'] >= date, 'Value'] = cash_before

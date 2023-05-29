@@ -24,7 +24,7 @@ class CompanyProfile(Base, JsonAble):
     image = Column("image", String, nullable=False)
     ipoDate = Column("ipoDate", Date)
 
-    def __init__(self, ticker: String, price: float, volAvg: int, beta: float, mktCap: int, companyName: str,
+    def __init__(self, ticker: str, price: float, volAvg: int, beta: float, mktCap: int, companyName: str,
                  exchange: str, industry: str, sector: str, website: str, description: str, ceo: str,
                  fullTimeEmployees: int, image: str, ipoDate: datetime.date):
         self.ticker = ticker

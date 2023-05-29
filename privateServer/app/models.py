@@ -1,7 +1,7 @@
 from sqlalchemy import ForeignKey
 
-from publicServer.DataCollector.Database.JsonAble import JsonAble
 from . import db
+from .JsonAble import JsonAble
 
 
 class JsonAbleUser(JsonAble):

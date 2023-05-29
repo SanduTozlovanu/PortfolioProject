@@ -10,6 +10,7 @@ const Register = () => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [email, setEmail] = useState("");
+    const [portfolioBalance, setPortfolioBalance] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [name, setName] = useState("");
@@ -18,6 +19,16 @@ const Register = () => {
 
     let navigate = useNavigate();
 
+    const handleInputBlur = () => {
+        let finalValue = parseInt(portfolioBalance, 10);
+        if (isNaN(finalValue)) {
+            finalValue = '';
+        } else {
+            finalValue = Math.min(Math.max(finalValue, 10000), 1000000);
+        }
+        setPortfolioBalance(finalValue.toString());
+    };
+
     useEffect(() => {
         setError(null)
     }, [email, password])
@@ -25,7 +36,7 @@ const Register = () => {
         if (loading) {
             return
         }
-        if (!email || !password || !confirmPassword) {
+        if (!email || !password || !confirmPassword || !portfolioBalance) {
             return setError("You must fill in all credentials.")
         }
         if(password !== confirmPassword)
@@ -42,7 +53,8 @@ const Register = () => {
                 {
                     email: email,
                     password: password,
-                    name: name
+                    name: name,
+                    money: portfolioBalance
                 });
             localStorage.setItem("confirm", JSON.stringify(response.data));
             navigate("/confirm");
@@ -100,6 +112,9 @@ const Register = () => {
                 </Box>
                 <Box style={formGroupStyle}>
                     <TextField label="Email" type="email" fullWidth onChange={(e) => setEmail(e.target.value)}/>
+                </Box>
+                <Box style={formGroupStyle}>
+                    <TextField label="Portfolio Balance" type="text" fullWidth  onBlur={handleInputBlur} onChange={(e) => setPortfolioBalance(e.target.value)}/>
                 </Box>
                 <Box style={formGroupStyle}>
                     <TextField label="Password" type="password" fullWidth onChange={(e) => setPassword(e.target.value)}/>

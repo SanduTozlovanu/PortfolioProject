@@ -16,7 +16,7 @@ def runCollector():
     api_invoker = APIInvoker()
     api_invoker.register(GetSNPList())
     api_invoker.register(GetCompanyProfile())
-    api_invoker.register(GetLatestNews())
+    #api_invoker.register(GetLatestNews())
     api_invoker.register(GetFinancialStatements())
     api_invoker.register(GetStockPrice())
     api_invoker.register(GetCompanyKeyMetrics())

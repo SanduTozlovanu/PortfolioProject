@@ -10,14 +10,17 @@ class StockPrice(Base, JsonAble):
     ticker = Column("ticker", String, unique=True)
     price = Column("price", Float, nullable=False)
     change = Column("change", Float, nullable=True)
+    yearChange = Column("yearChange", Float, nullable=True)
 
-    def __init__(self, ticker: str, price: float, change: float):
+    def __init__(self, ticker: str, price: float, change: float, yearChange: float):
         self.ticker: str = ticker
         self.price: float = price
         self.change: float = change
+        self.yearChange: float = yearChange
 
     def update(self, object):
         self.ticker: str = object.ticker
         self.price: str = object.price
-        self.change: str = object.change
+        self.change: float = object.change
+        self.yearChange: float = object.yearChange
 

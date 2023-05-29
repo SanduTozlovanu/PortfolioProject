@@ -32,7 +32,7 @@ class GetStockPrice(Command, ABC):
     @staticmethod
     def collectData(result):
         for elem in result:
-            stock_price = StockPrice(ticker=elem["symbol"], price=elem["price"], change=0)
+            stock_price = StockPrice(ticker=elem["symbol"], price=elem["price"], change=0, yearChange=0)
             result: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == stock_price.ticker).first()
             if result:
                 result.price = stock_price.price

@@ -1,6 +1,5 @@
 import functools
 import json
-import random
 import threading
 from sqlite3 import Row
 
@@ -16,7 +15,10 @@ from JWTHelper import JWTHandler
 from publicServer.DTOs.CompanySelectDataDto import CompanySelectDataDto
 from publicServer.DTOs.RevenueChartBarDto import RevenueChartBarDto
 from publicServer.DTOs.SearchStockDto import SearchStockDto
+from publicServer.DTOs.StockBasedataDto import StockBasedataDto
 from publicServer.DTOs.StockFinancesDto import StockFinancesDto
+from publicServer.DTOs.StockPriceChangeDto import StockPriceChangeDto
+from publicServer.DTOs.StockRatiosDto import StockRatiosDto
 from publicServer.DTOs.TickerPriceDto import TickerPriceDto
 from publicServer.DTOs.NewsDto import NewsDto
 from publicServer.DataCollector.Database.Models.Balance import Balance
@@ -44,7 +46,7 @@ app.config["JWT"] = jwt_helper.create_jwt_token(SERVER_NAME)
 
 def get_jwt_token():
     if not jwt_helper.is_token_valid(app.config["JWT"]):
-        app.config["JWT"] = jwt_helper.create_jwt_token("PrivateServer")
+        app.config["JWT"] = jwt_helper.create_jwt_token("PublicServer")
     return app.config["JWT"]
 
 
@@ -215,11 +217,6 @@ def get_financial_statement(company_name):
 @jwt_required
 def get_company_finances(company_ticker):
     try:
-        company_financial_statement = db.query(FinancialStatement).filter(
-            FinancialStatement.ticker == company_ticker).order_by(FinancialStatement.date.desc()).first()
-        if company_financial_statement is None:
-            return make_response("Company statement not found", 404)
-
         company_balance: Balance = db.query(Balance).filter(
             Balance.ticker == company_ticker).first()
         if company_balance is None:
@@ -416,11 +413,13 @@ def get_latest_news(ticker_list):
             latest_news_list: list[LatestNew] = []
             titles_used = []
             for ticker in ticker_list:
-                new_list = db.query(LatestNew).filter(LatestNew.ticker == ticker).order_by(LatestNew.date.desc()).limit(2).all()
+                new_list = db.query(LatestNew).filter(LatestNew.ticker == ticker).order_by(LatestNew.date.desc()).limit(
+                    2).all()
                 for new in new_list:
                     titles_used.append(new.title)
                 latest_news_list += new_list
-            latest_news_list += db.query(LatestNew).filter(LatestNew.title not in titles_used).order_by(LatestNew.date.desc()).limit(40 - len(latest_news_list)).all()
+            latest_news_list += db.query(LatestNew).filter(LatestNew.title not in titles_used).order_by(
+                LatestNew.date.desc()).limit(40 - len(latest_news_list)).all()
             for new in latest_news_list:
                 stock_price: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == new.ticker).first()
                 if stock_price is None:
@@ -430,6 +429,72 @@ def get_latest_news(ticker_list):
 
         news_dtos.sort(key=lambda dto: dto.date, reverse=True)
         return make_response(jsonify([new_dto.__dict__ for new_dto in news_dtos]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/ratios', methods=['GET'])
+@jwt_required
+def get_companies_ratios():
+    try:
+        stock_ratios_dtos: list[StockRatiosDto] = []
+        snp_list: list[Company] = db.query(Company).all()
+        for company in snp_list:
+            company_ratios: Ratios = db.query(Ratios).filter(
+                Ratios.ticker == company.ticker).first()
+            if company_ratios is None:
+                return make_response("Company ratios not found", 404)
+
+            company_key_metrics: KeyMetrics = db.query(KeyMetrics).filter(
+                KeyMetrics.ticker == company.ticker).first()
+            if company_key_metrics is None:
+                return make_response("Company key metrics not found", 404)
+
+            stockPrice: StockPrice = db.query(StockPrice).filter(
+                StockPrice.ticker == company.ticker).first()
+            if stockPrice is None:
+                return make_response("ticker not found", 404)
+
+            stock_ratios_dtos.append(StockRatiosDto(ratios=company_ratios, key_metrics=company_key_metrics, price=stockPrice.price))
+        return make_response(jsonify([stock_ratio_dto.__dict__ for stock_ratio_dto in stock_ratios_dtos]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/priceChange', methods=['GET'])
+@jwt_required
+def get_all_tickers_price_change():
+    try:
+        response_list: list[StockPriceChangeDto] = []
+        company_list: list[Company] = db.query(Company).all()
+        for company in company_list:
+            stockPrice: StockPrice = db.query(StockPrice).filter(
+                StockPrice.ticker == company.ticker).first()
+            if stockPrice is None:
+                return make_response("ticker not found", 404)
+            response_list.append(StockPriceChangeDto(ticker=company.ticker, price=stockPrice.price, yearChange=stockPrice.yearChange))
+
+        return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/stock/basedata', methods=['GET'])
+@jwt_required
+def get_stocks_basedata():
+    try:
+        companies: list[CompanyProfile] = db.query(CompanyProfile).all()
+        returned_companies: list[StockBasedataDto] = []
+        for company in companies:
+            stock_price: StockPrice = db.query(StockPrice).filter(
+                StockPrice.ticker == company.ticker).first()
+            returned_companies.append(
+                StockBasedataDto(ticker=company.ticker, marketCap=company.mktCap, price=stock_price.price))
+
+        return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
     except Exception as exc:
         print(exc)
         return make_response("Internal server error", 500)
