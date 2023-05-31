@@ -14,4 +14,4 @@ class ValueStockDto:
         self.operatingMargin = operatingMargin
         self.freeCashFlowYield = freeCashFlowYield
         self.evToEbitda = evToEbitda
-        self.score = score
+        self.score = round(score, 2)

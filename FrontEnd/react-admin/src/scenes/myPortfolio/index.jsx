@@ -1,4 +1,4 @@
-import {Box, Typography, Grid, Stack, CircularProgress, useTheme, Divider, Button} from "@mui/material";
+import {Box, Typography, Grid, Stack, CircularProgress, useTheme, Divider, Button, Pagination} from "@mui/material";
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import {tokens} from "../../theme";
 import React, {useState, useEffect} from "react";
@@ -12,6 +12,7 @@ import SellStockForm from "../../components/myPortfolio/SellStockForm";
 import TickerChangeComponent from "../../components/TickerChangeComponent";
 import PortfolioPerformanceChart from "../../components/myPortfolio/PortfolioPerformanceChart";
 import PortfolioStats from "../../components/myPortfolio/PortfolioStats";
+import NewsComponent from "../../components/NewsComponent";
 
 const MyPortfolio = () => {
     const [gainers, setGainers] = useState([]);
@@ -24,6 +25,16 @@ const MyPortfolio = () => {
     const [error, setError] = useState({});
     const [value, setValue] = useState(0);
     const [currentValue, setCurrentValue] = useState('');
+    const componentsPerPage = 9
+    const [totalComponents, setTotalComponents] = useState(0);
+    const [currentPage, setCurrentPage] = useState(1);
+    const startIndex = (currentPage - 1) * componentsPerPage;
+    const endIndex = startIndex + componentsPerPage;
+    const visibleHoldingPerfomance = holdingsPerformance.slice(startIndex, endIndex);
+
+    const handlePageChange = (event, page) => {
+        setCurrentPage(page);
+    };
 
     const handleSetCurrentValue = (value) => {
         setCurrentValue(value);
@@ -131,6 +142,7 @@ const MyPortfolio = () => {
                 },
             });
             setHoldingsPerformance(response.data)
+            setTotalComponents(response.data.length)
             setError("")
             setIsLoading(false)
         } catch (error) {
@@ -179,12 +191,19 @@ const MyPortfolio = () => {
                             <Typography variant="h3" style={{textAlign: 'center', marginTop: 0, marginBottom: 10}}>My
                                 Holdings performance</Typography>
                             <Grid container spacing={2} style={{paddingBottom: 30}}>
-                                {holdingsPerformance.map((item, index) => (
+                                {visibleHoldingPerfomance.map((item, index) => (
                                     <Grid item xs={4} md={4} key={item.ticker}>
                                         <TickerChangeComponent ticker={item.ticker} change={item.change}/>
                                     </Grid>
                                 ))}
                             </Grid>
+                            {holdingsPerformance.length > 9 &&(<Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+                                    <Pagination
+                                        count={Math.ceil(totalComponents / componentsPerPage)}
+                                        page={currentPage}
+                                        onChange={handlePageChange}
+                                    />
+                                </Box>)}
                         </Box>
                         )}
                 </Grid>

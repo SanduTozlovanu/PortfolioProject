@@ -17,6 +17,8 @@ import AuthContext from './components/AuthContext';
 import MyPortfolio from "./scenes/myPortfolio";
 import News from "./scenes/news";
 import TransactionHistory from "./scenes/transactionHistory";
+import PortfolioCreator from "./scenes/portfolioCreator";
+import PortfolioScreener from "./scenes/portfolioScreener";
 
 function App() {
     const [theme, colorMode] = useMode();
@@ -45,7 +47,9 @@ function App() {
                                 <Route path="/" element={isAuthenticated ? (<Dashboard/>) : (<Navigate to="/welcome" replace/>)}/>
                                 <Route path="/myPortfolio" element={isAuthenticated ? (<MyPortfolio/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/transactions" element={isAuthenticated ? (<TransactionHistory/>) : (<Navigate to="/login" replace/>)}/>
+                                <Route path="/portfolioCreator" element={isAuthenticated ? (<PortfolioCreator/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/stockProfile/:stock_name" element={<StockProfile/>}/>
+                                <Route path="/portfolioScreener/:strategy_name" element={isAuthenticated ? (<PortfolioScreener/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/welcome" element={<Welcome/>}/>
                                 <Route path="/register" element={<Register/>}/>
                                 <Route path="/confirm" element={<Confirm/>}/>

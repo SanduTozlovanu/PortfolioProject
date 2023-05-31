@@ -1,11 +1,19 @@
 class ColumnCreator:
     @staticmethod
     def __get_column(field: str, headerName: str, width: int):
-        return dict(
-            field=field,
-            headerName=headerName,
-            width=width
-        )
+        if field != "id":
+            return dict(
+                field=field,
+                headerName=headerName,
+                width=width,
+                flex=1
+            )
+        else:
+            return dict(
+                field=field,
+                headerName=headerName,
+                width=width
+            )
 
     @staticmethod
     def __get_id():
@@ -20,12 +28,16 @@ class ColumnCreator:
         return ColumnCreator.__get_column("quantity", "Number of Shares", 30)
 
     @staticmethod
+    def __get_price():
+        return ColumnCreator.__get_column("price", "Share Price", 30)
+
+    @staticmethod
     def __get_market_cap():
         return ColumnCreator.__get_column("marketCap", "Market Cap", 150)
 
     @staticmethod
     def __get_year_change():
-        return ColumnCreator.__get_column("yearChange", "Year change", 50)
+        return ColumnCreator.__get_column("yearChange", "Year Change", 50)
 
     @staticmethod
     def __get_score():
@@ -61,11 +73,12 @@ class ColumnCreator:
 
     @staticmethod
     def __get_ev_ebitda():
-        return ColumnCreator.__get_column("evToEbitdaPercent", "EV/EBITDA", 50)
+        return ColumnCreator.__get_column("evToEbitda", "EV/EBITDA", 50)
 
     @staticmethod
     def __get_base_columns() -> list:
-        return [ColumnCreator.__get_id(), ColumnCreator.__get_ticker(), ColumnCreator.__get_quantity()]
+        return [ColumnCreator.__get_id(), ColumnCreator.__get_ticker(), ColumnCreator.__get_price(),
+                ColumnCreator.__get_quantity()]
 
     @staticmethod
     def __add_value_columns(columns: list) -> list:

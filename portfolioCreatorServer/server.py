@@ -63,9 +63,8 @@ def make_request(method: str, url: str, json=None, request=None):
 def jwt_required(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if request.headers:
-            request_jwt = request.headers.get("Authorization")
-        else:
+        request_jwt = request.headers.get("Authorization")
+        if not request_jwt:
             return make_response("Please provide the Authorization header", 403)
         # Check if jwt is correct and valid
         try:
@@ -80,7 +79,7 @@ def jwt_required(func):
     return decorator
 
 
-@app.route('/api/portfolio/create/equal_weight/<money>', methods=['GET'])
+@app.route('/api/portfolio/create/equalWeight/<money>', methods=['GET'])
 @jwt_required
 def create_equal_weight_portfolio(money):
     try:
@@ -163,7 +162,7 @@ def create_quantitative_value_portfolio(money):
         return make_response("Internal server error", 500)
 
 
-@app.route('/api/portfolio/create/value_momentum/<money>', methods=['GET'])
+@app.route('/api/portfolio/create/valueMomentum/<money>', methods=['GET'])
 @jwt_required
 def create_quantitative_value_momentum_portfolio(money):
     try:

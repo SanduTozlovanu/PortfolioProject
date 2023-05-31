@@ -70,9 +70,8 @@ def make_request(method: str, url: str, json=None, request=None):
 def jwt_required(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if request.headers:
-            request_jwt = request.headers.get("Authorization")
-        else:
+        request_jwt = request.headers.get("Authorization")
+        if not request_jwt:
             return make_response("Please provide the Authorization header", 403)
         # Check if jwt is correct and valid
         try:
@@ -395,6 +394,19 @@ def search_query():
         return make_response("Internal server error", 500)
 
 
+@app.route('/api/new/latest', methods=['GET'])
+@jwt_required
+def get_latest_new():
+    try:
+        new = db.query(LatestNew).order_by(LatestNew.date.desc()).first()
+        news_dto = NewsDto(ticker=new.ticker, change=0, date=new.date, image=new.image,
+                text=new.text, url=new.url, title=new.title, site=new.site)
+        return make_response(jsonify(news_dto.__dict__))
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
 @app.route('/api/news/<ticker_list>', methods=['GET'])
 @jwt_required
 def get_latest_news(ticker_list):
@@ -456,7 +468,8 @@ def get_companies_ratios():
             if stockPrice is None:
                 return make_response("ticker not found", 404)
 
-            stock_ratios_dtos.append(StockRatiosDto(ratios=company_ratios, key_metrics=company_key_metrics, price=stockPrice.price))
+            stock_ratios_dtos.append(
+                StockRatiosDto(ratios=company_ratios, key_metrics=company_key_metrics, price=stockPrice.price))
         return make_response(jsonify([stock_ratio_dto.__dict__ for stock_ratio_dto in stock_ratios_dtos]), 200)
     except Exception as exc:
         print(exc)
@@ -474,7 +487,8 @@ def get_all_tickers_price_change():
                 StockPrice.ticker == company.ticker).first()
             if stockPrice is None:
                 return make_response("ticker not found", 404)
-            response_list.append(StockPriceChangeDto(ticker=company.ticker, price=stockPrice.price, yearChange=stockPrice.yearChange))
+            response_list.append(
+                StockPriceChangeDto(ticker=company.ticker, price=stockPrice.price, yearChange=stockPrice.yearChange))
 
         return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
     except Exception as exc:
@@ -495,6 +509,20 @@ def get_stocks_basedata():
                 StockBasedataDto(ticker=company.ticker, marketCap=company.mktCap, price=stock_price.price))
 
         return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal server error", 500)
+
+
+@app.route('/api/ticker_list', methods=['GET'])
+def get_ticker_list():
+    try:
+        companies: list[Company] = db.query(Company).all()
+        ticker_list = []
+        for company in companies:
+            ticker_list.append(company.ticker)
+
+        return make_response(ticker_list, 200)
     except Exception as exc:
         print(exc)
         return make_response("Internal server error", 500)

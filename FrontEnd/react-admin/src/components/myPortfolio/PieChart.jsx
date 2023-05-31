@@ -1,7 +1,8 @@
 import { ResponsivePie } from "@nivo/pie";
 import { tokens } from "../../theme";
-import {Box, CircularProgress, useTheme} from "@mui/material";
+import {Box, CircularProgress, Typography, useTheme} from "@mui/material";
 import React, {useEffect, useState} from "react";
+import ErrorIcon from '@mui/icons-material/Error';
 import axios from "axios";
 import config from "../../config.json";
 
@@ -33,10 +34,19 @@ const PieChart = () => {
   }
   if (isLoading) {
     return (
-        <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"30vh"}}>
+        <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"45vh"}}>
           <CircularProgress sx={{color: colors.primary[300]}} />
         </Box>
     );
+  }
+  if (chartData.length > 50)
+  {
+    return(
+    <Box sx={{display: 'flex', justifyContent: "center", alignItems: "center", height: "50vh"}}>
+      <ErrorIcon sx={{height: "50px" , width: "50px" , color: colors.redAccent[300]}}/>
+      <Typography variant="h3" marginLeft="14px" marginRight="40px">Pie chart unavailable for portfolios holding more than 50 stocks</Typography>
+    </Box>
+  )
   }
   return (
     <ResponsivePie

@@ -5,7 +5,7 @@ import axios from "axios";
 import config from "../../config.json";
 import StatComponent from "../StatComponent";
 
-const PortfolioStats = ({ onSetCurrentValue }) => {
+const PortfolioStats = ({ onSetCurrentValue , portfolioStats}) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [portfolioStats, setPortfolioStats] = useState({});

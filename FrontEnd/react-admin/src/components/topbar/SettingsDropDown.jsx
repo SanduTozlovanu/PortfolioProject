@@ -1,8 +1,28 @@
-import React from 'react';
-import { IconButton, Menu, MenuItem } from '@mui/material';
+import React, {useState} from 'react';
+import {
+    Button,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    IconButton,
+    Menu,
+    MenuItem, useTheme
+} from '@mui/material';
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
+import config from "../../config.json";
+import axios from "axios";
+import {tokens} from "../../theme";
 function SettingsDropDown() {
+    const theme = useTheme();
+    const colors = tokens(theme.palette.mode);
     const [anchorEl, setAnchorEl] = React.useState(null);
+    const [open, setOpen] = useState(false);
+
+    const handleClickOpen = () => {
+        setOpen(true);
+    };
 
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -10,7 +30,22 @@ function SettingsDropDown() {
 
     const handleClose = () => {
         setAnchorEl(null);
+        setOpen(false)
     };
+    const resetAccount = async () => {
+        try {
+            const response = await axios.delete(`${config.url}/user/reset`,
+                {
+                    headers: {
+                        Authorization: JSON.parse(localStorage.getItem("user")).token,
+                    }
+
+                });
+            window.location.reload();
+        } catch (error) {
+            console.log(error)
+        }
+    }
 
     return (
         <div>
@@ -28,10 +63,26 @@ function SettingsDropDown() {
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
             >
-                <MenuItem onClick={handleClose}>Option 1</MenuItem>
-                <MenuItem onClick={handleClose}>Option 2</MenuItem>
-                <MenuItem onClick={handleClose}>Option 3</MenuItem>
+                <MenuItem onClick={handleClickOpen}>Reset Account</MenuItem>
             </Menu>
+            <Dialog open={open} onClose={handleClose}>
+                <DialogTitle style={{backgroundColor: colors.primary[400]}}>Confirmation</DialogTitle>
+                <DialogContent style={{backgroundColor: colors.primary[400]}}>
+                    <DialogContentText>
+                        Are you sure that you want to reset the account? All the stocks and transactions will be deleted.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions style={{backgroundColor: colors.primary[400]}}>
+                    <Button sx={{
+                        backgroundColor: colors.redAccent[400],
+                        ":hover": {backgroundColor: colors.redAccent[700]}
+                    }} onClick={handleClose}>No</Button>
+                    <Button sx={{
+                        backgroundColor: colors.greenAccent[400],
+                        ":hover": {backgroundColor: colors.greenAccent[700]}
+                    }} onClick={resetAccount}>Yes</Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 }

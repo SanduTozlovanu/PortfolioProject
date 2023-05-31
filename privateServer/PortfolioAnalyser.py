@@ -1,7 +1,7 @@
-import traceback
 from datetime import datetime
 import numpy as np
 import pandas as pd
+from plotly import graph_objs as go
 
 from privateServer.DTOs.PortfolioStatsDto import PortfolioStatsDto
 from privateServer.DataframeCollector import DataframeCollector
@@ -23,11 +23,16 @@ class PortfolioAnalyser:
     def __init__(self):
         self.dataframe_collector = DataframeCollector()
 
+    def filter_transaction_list(self, transaction_list: list[Transaction]):
+        return [transaction for transaction in transaction_list if
+                            transaction.date <= self.dataframe_collector.last_date]
+
     def create_chart_data(self, transaction_list: list[Transaction], creation_time: datetime, money: float):
-        hold_periods = PortfolioAnalyser.__generateHoldPeriods(transaction_list)
-        df = self.dataframe_collector.get("AAPL", start=creation_time.strftime("%Y-%m-%d"))
+        df = self.dataframe_collector.get("AAPL", start=creation_time.strftime("%Y-%m-%d"), end=self.dataframe_collector.last_date)
         df["Close"] = np.nan
         df = df.rename(columns={'Close': 'Value'})
+        transaction_list = self.filter_transaction_list(transaction_list)
+        hold_periods = PortfolioAnalyser.__generateHoldPeriods(transaction_list)
         PortfolioAnalyser.__initDataframeCash(df, transaction_list, money)
         print(df)
 
@@ -75,9 +80,13 @@ class PortfolioAnalyser:
         highest_value = df['Value'].max()
         lowest_value = df['Value'].min()
 
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=df['Date'], y=df['Value'], name="Stock Value"))
+        fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
+
         return PortfolioStatsDto(initialValue=money, currentValue=current_value, holdings=holdings_count,
                                  beta=portfolio_beta, portfolioReturn=portfolio_return, snpReturn=snp_change,
-                                 highestValue=highest_value, lowestValue=lowest_value)
+                                 highestValue=highest_value, lowestValue=lowest_value, chartData=fig.to_json())
 
     def __get_snp_data(self, start_date):
         symbol = "^GSPC"
@@ -121,6 +130,8 @@ class PortfolioAnalyser:
         if current_quantity != 0:
             hold_periods_to_return.append(
                 HoldPeriod(ticker=ticker, quantity=current_quantity, start_date=last_date, end_date=None))
+        else:
+            print("wtf")
 
         return hold_periods_to_return
 

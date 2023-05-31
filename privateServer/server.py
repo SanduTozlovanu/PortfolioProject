@@ -2,11 +2,9 @@ import configparser
 from datetime import datetime, timedelta
 import functools
 import os
-import threading
 from random import randint
 from urllib.parse import urlencode
 from plotly import graph_objs as go
-import traceback
 
 from pymongo import MongoClient
 
@@ -74,9 +72,8 @@ def return_response(response: Response):
 def jwt_required(func):
     @functools.wraps(func)
     def decorator(*args, **kwargs):
-        if request.headers:
-            request_jwt = request.headers.get("Authorization")
-        else:
+        request_jwt = request.headers.get("Authorization")
+        if not request_jwt:
             return make_response("Please provide the Authorization header", 403)
         # Check if jwt is correct and valid
         try:
@@ -138,12 +135,41 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         inserted_user = User.query.filter(User.email == new_user.email).first()
-        new_portfolio = Portfolio(user_id=inserted_user.id, money=money)
+        new_portfolio = Portfolio(user_id=inserted_user.id, money=money, initial_money=money)
         db.session.add(new_portfolio)
         db.session.commit()
         return make_response(new_user.as_dict(), 201)
     except SQLAlchemyError as exc:
         return make_response("This user already exists", 409)
+    except Exception as exc:
+        print(exc)
+        return make_response("Internal Server error", 500)
+
+
+@app.route('/user/reset', methods=['DELETE'])
+@cross_origin()
+@jwt_required
+def reset():
+    try:
+        email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
+        user: User = User.query.filter(User.email == email).first()
+        created_on = datetime.now()
+        if created_on.weekday() >= 5:
+            created_on -= timedelta(days=2)
+        else:
+            created_on -= timedelta(days=1)
+        user.created_on = created_on
+        portfolio = Portfolio.get_portfolio(email)
+        portfolio.money = portfolio.initial_money
+        transaction_list: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).all()
+        for transaction in transaction_list:
+            db.session.delete(transaction)
+
+        stock_list: list[Stock] = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
+        for stock in stock_list:
+            db.session.delete(stock)
+        db.session.commit()
+        return make_response("Succesfully reseted", 200)
     except Exception as exc:
         print(exc)
         return make_response("Internal Server error", 500)
@@ -230,6 +256,8 @@ def buy_stock():
         quantity = request.json["quantity"]
         email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
         portfolio = Portfolio.get_portfolio(email)
+        if quantity < 1:
+            return make_response("You can't but less than 1 share", 400)
         if quantity * price > portfolio.money:
             return make_response("Not enough funds to buy stock", 400)
         stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
@@ -260,11 +288,13 @@ def buy_stock_batch():
     try:
         email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
         portfolio = Portfolio.get_portfolio(email)
-        stock_list = request.json["stocks"]
+        stock_list = request.json["portfolioData"]
         for stock in stock_list:
             quantity = stock["quantity"]
             price = stock["price"]
             ticker = stock["ticker"]
+            if quantity < 1:
+                return make_response("You can't but less than 1 share", 400)
             if quantity * price > portfolio.money:
                 return make_response("Not enough funds to buy stock", 400)
             stock: Stock = Stock.query.filter(and_(Stock.ticker == ticker, Stock.portfolio_id == portfolio.id)).first()
@@ -275,7 +305,7 @@ def buy_stock_batch():
             else:
                 stock.medium_buy_price = (stock.medium_buy_price * stock.quantity + price * quantity) / (
                         quantity + stock.quantity)
-            stock.quantity += quantity
+                stock.quantity += quantity
             portfolio.money -= (quantity * price)
             new_transaction = Transaction(portfolio_id=portfolio.id, ticker=ticker, piece_price=price,
                                           date=datetime.now(),
@@ -375,7 +405,7 @@ def get_portfolio_performance_chart():
         transactions: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).order_by(
             Transaction.date.asc()).all()
         user: User = User.query.filter(User.email == email).first()
-        df = portfolio_analyser.create_chart_data(transactions, user.created_on, portfolio.money)
+        df = portfolio_analyser.create_chart_data(transactions, user.created_on, portfolio.initial_money)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['Date'], y=df['Value'], name="Stock Value"))
         fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
@@ -414,8 +444,8 @@ def get_portfolio_stats():
         user: User = User.query.filter(User.email == email).first()
         stocks: Stock = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
         stats: PortfolioStatsDto = portfolio_analyser.get_portfolio_stats(len(stocks), transactions, user.created_on,
-                                                                          portfolio.money)
-        return make_response(jsonify(stats.__dict__), 200)
+                                                                          portfolio.initial_money)
+        return make_response(stats.to_json(), 200)
     except Exception as exc:
         print(exc)
         return make_response("Server Error", 500)
@@ -534,19 +564,25 @@ def get_top_losers():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/losers"))
 
 
-@app.route('/portfolio/create/equal_weight', methods=['GET'])
-@jwt_required
+@app.route('/new/latest', methods=['GET'])
 @cross_origin()
+def get_latest_new():
+    return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "new/latest"))
+
+
+@app.route('/portfolio/create/equalWeight', methods=['GET'])
+@cross_origin()
+@jwt_required
 def create_equal_weight_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
     portfolio = Portfolio.get_portfolio(email)
     return return_response(
-        make_request("GET", BASE_PORTFOLIO_CREATOR_ENDPOINT + "portfolio/create/equal_weight/" + str(portfolio.money)))
+        make_request("GET", BASE_PORTFOLIO_CREATOR_ENDPOINT + "portfolio/create/equalWeight/" + str(portfolio.money)))
 
 
 @app.route('/portfolio/create/weighted', methods=['GET'])
-@jwt_required
 @cross_origin()
+@jwt_required
 def create_weighted_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
     portfolio = Portfolio.get_portfolio(email)
@@ -555,8 +591,8 @@ def create_weighted_portfolio():
 
 
 @app.route('/portfolio/create/momentum', methods=['GET'])
-@jwt_required
 @cross_origin()
+@jwt_required
 def create_quantitative_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
     portfolio = Portfolio.get_portfolio(email)
@@ -565,8 +601,8 @@ def create_quantitative_momentum_portfolio():
 
 
 @app.route('/portfolio/create/value', methods=['GET'])
-@jwt_required
 @cross_origin()
+@jwt_required
 def create_quantitative_value_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
     portfolio = Portfolio.get_portfolio(email)
@@ -574,15 +610,15 @@ def create_quantitative_value_portfolio():
         make_request("GET", BASE_PORTFOLIO_CREATOR_ENDPOINT + "portfolio/create/value/" + str(portfolio.money)))
 
 
-@app.route('/portfolio/create/value_momentum', methods=['GET'])
-@jwt_required
+@app.route('/portfolio/create/valueMomentum', methods=['GET'])
 @cross_origin()
+@jwt_required
 def create_quantitative_value_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
     portfolio = Portfolio.get_portfolio(email)
     return return_response(
         make_request("GET",
-                     BASE_PORTFOLIO_CREATOR_ENDPOINT + "portfolio/create/value_momentum/" + str(portfolio.money)))
+                     BASE_PORTFOLIO_CREATOR_ENDPOINT + "portfolio/create/valueMomentum/" + str(portfolio.money)))
 
 
 def app_run():
@@ -590,6 +626,4 @@ def app_run():
 
 
 if __name__ == "__main__":
-    thread = threading.Thread(target=app_run, daemon=True)
-    thread.start()
-    thread.join()
+    app_run()

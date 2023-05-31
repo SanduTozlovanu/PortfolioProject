@@ -25,6 +25,7 @@ class PortfolioCreator:
         for i in range(0, len(df['ticker'])):
             df.loc[i, 'sharesToBuy'] = math.floor(money * (df['marketCap'][i] / total_market_cap) / df['price'][i])
         residual_cash = money - (df['price'] * df['sharesToBuy']).sum()
+        df = df[df['sharesToBuy'] != 0]
         return df, residual_cash
 
     @staticmethod
@@ -50,6 +51,8 @@ class PortfolioCreator:
         for i in range(0, len(df['ticker'])):
             df.loc[i, 'sharesToBuy'] = math.floor(money / len(df.index) / df['price'][i])
         residual_cash = money - (df['price'] * df['sharesToBuy']).sum()
+        df = df[df['sharesToBuy'] != 0]
+        df.reset_index(drop=True, inplace=True)
         return df, residual_cash
 
     @staticmethod

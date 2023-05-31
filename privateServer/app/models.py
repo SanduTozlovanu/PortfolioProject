@@ -26,6 +26,7 @@ class Portfolio(db.Model, JsonAble):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, ForeignKey("user.id"), unique=True)
     money = db.Column(db.Float, nullable=False)
+    initial_money = db.Column(db.Float, nullable=False)
 
     @staticmethod
     def get_portfolio(email):

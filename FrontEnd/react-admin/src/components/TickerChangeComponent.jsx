@@ -8,9 +8,9 @@ import {tokens} from "../theme";
 const TickerChangeComponent = ({ticker, change}) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const color = parseFloat(change) > 0 ? colors.greenAccent[500] : colors.redAccent[500]
+    const color = parseFloat(change) >= 0 ? colors.greenAccent[500] : colors.redAccent[500]
     const style = {height:"60%", marginTop: 3}
-    const icon = parseFloat(change) > 0 ? <NorthIcon style={style}/> : <SouthIcon style={style}/>
+    const icon = parseFloat(change) >= 0 ? <NorthIcon style={style}/> : <SouthIcon style={style}/>
     const navigate = useNavigate()
     let link = "https://financialmodelingprep.com/image-stock/" + ticker + ".png"
     return (

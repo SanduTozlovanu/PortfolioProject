@@ -16,6 +16,7 @@ import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
 import QueryStatsIcon from '@mui/icons-material/QueryStats';
 import WorkIcon from '@mui/icons-material/Work';
+import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 import Authcontext from "../../components/AuthContext";
 
 const Item = ({title, to, icon, selected, setSelected}) => {
@@ -69,7 +70,6 @@ function Sidebar({onToggleCollapse}) {
         >
             <ProSidebar collapsed={isCollapsed} style={{position: 'fixed'}}>
                 <Menu iconShape="square">
-                    {/* LOGO AND MENU ICON */}
                     <MenuItem
                         onClick={() => {
                             setIsCollapsed(!isCollapsed)
@@ -183,6 +183,13 @@ function Sidebar({onToggleCollapse}) {
                             title="My Portfolio"
                             to="/myPortfolio"
                             icon={<WorkIcon/>}
+                            selected={selected}
+                            setSelected={setSelected}
+                        />}
+                        {isAuthenticated && <Item
+                            title="Portfolio Creator"
+                            to="/portfolioCreator"
+                            icon={<PrecisionManufacturingIcon/>}
                             selected={selected}
                             setSelected={setSelected}
                         />}

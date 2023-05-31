@@ -15,4 +15,4 @@ class ValueMomentumStockDto:
         self.freeCashFlowYield = freeCashFlowYield
         self.evToEbitda = evToEbitda
         self.yearChange = yearChange
-        self.score = score
+        self.score = round(score, 2)
