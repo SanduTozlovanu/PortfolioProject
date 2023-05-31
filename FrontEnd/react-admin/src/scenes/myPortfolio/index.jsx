@@ -86,12 +86,8 @@ const MyPortfolio = () => {
         try {
             const response = await axios.get(`${config.url}/stock/gainers`);
             setGainers(response.data)
-            setError("")
-            setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get gainers!")
-            setIsLoading(false)
         }
     }
 
@@ -99,12 +95,8 @@ const MyPortfolio = () => {
         try {
             const response = await axios.get(`${config.url}/stock/losers`);
             setLosers(response.data)
-            setError("")
-            setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get losers!")
-            setIsLoading(false)
         }
     }
 
@@ -116,12 +108,8 @@ const MyPortfolio = () => {
                 },
             });
             setPersonalised(response.data)
-            setError("")
-            setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get personalised!")
-            setIsLoading(false)
         }
     }
 
@@ -135,10 +123,8 @@ const MyPortfolio = () => {
             setPortfolioStats(response.data)
             setCurrentValue(response.data.currentValue)
             setChartJson(JSON.parse(response.data.chartData))
-            setError("")
         } catch(error){
             console.log(error)
-            setError("Failed to get portfolio stats!")
         }
     }
     const getHoldingsPerformance = async () => {
@@ -150,12 +136,8 @@ const MyPortfolio = () => {
             });
             setHoldingsPerformance(response.data)
             setTotalComponents(response.data.length)
-            setError("")
-            setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get my holdings!")
-            setIsLoading(false)
         }
     }
 

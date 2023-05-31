@@ -49,11 +49,9 @@ const News = () => {
             setNews(response.data)
             setTotalComponents(response.data.length)
             setIsLoading(false);
-            setError("")
         } catch(error){
             console.log(error)
             setIsLoading(false);
-            setError("Failed to get news!")
         }
     }
 

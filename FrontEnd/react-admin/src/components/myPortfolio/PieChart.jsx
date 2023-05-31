@@ -24,11 +24,9 @@ const PieChart = () => {
       });
       setChartData(response.data)
       setIsLoading(false)
-      setError("")
     } catch(error){
       console.log(error)
       setIsLoading(false)
-      setError("Failed to get financial stats!")
     }
   }
   if (isLoading) {

@@ -20,11 +20,9 @@ const PriceChartComponent = ({stock_name}) => {
         try {
             const response = await axios.get(`${config.url}/stock/chart/price/${stock_name}`);
             setChartJson(response.data)
-            setError("")
             setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get price chart!")
             setIsLoading(false)
         }
     }

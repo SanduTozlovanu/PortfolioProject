@@ -36,11 +36,9 @@ const StockProfile = () => {
         try {
             const response = await axios.get(`${config.url}/stock/details/${stock_name}`);
             setProfile(response.data)
-            setError("")
             setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get statement!")
             setIsLoading(false)
         }
     }

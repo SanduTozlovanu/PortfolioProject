@@ -24,10 +24,8 @@ const TransactionHistory = () => {
             });
             setTransactions(response.data)
             console.log(response.data)
-            setError("")
         } catch(error){
             console.log(error)
-            setError("Failed to get transactions!")
         }
     }
     const getRowClassName = (params) => {

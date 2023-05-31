@@ -56,12 +56,9 @@ const PortfolioScreener = () => {
                     }
 
                 });
-
-            setError("")
             navigate("/myPortfolio");
         } catch (error) {
             console.log(error)
-            setError("Failed to buy generated Portfolio!")
             setIsLoading(false)
         }
     }
@@ -76,7 +73,6 @@ const PortfolioScreener = () => {
         try {
             const response = await axios.get(`${config.url}/portfolio/create/${strategy_name}`, headers);
             setPortfolioData(response.data.data)
-            setResidualCash(response.data.cash)
             let renderedColumns = response.data.columns
             renderedColumns[1].renderCell = (params) => (
                 <span>
@@ -100,11 +96,9 @@ const PortfolioScreener = () => {
 
             setColumns(renderedColumns)
             console.log("Columns are " + response.data.columns)
-            setError("")
             setIsLoading(false)
         } catch (error) {
             console.log(error)
-            setError("Failed to get created portfolio!")
             setIsLoading(false)
         }
     }
