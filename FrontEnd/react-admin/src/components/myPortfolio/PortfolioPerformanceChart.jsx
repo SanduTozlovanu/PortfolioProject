@@ -1,39 +1,15 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import Plotly from 'plotly.js-basic-dist';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import axios from "axios";
-import config from "../../config.json";
 import {Box, CircularProgress, Typography, useTheme} from "@mui/material";
 import {tokens} from "../../theme";
 
 const Plot = createPlotlyComponent(Plotly);
-const PortfolioPerformanceChart = () => {
+const PortfolioPerformanceChart = ({chartJson}) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const [chartJson, setChartJson] = useState({});
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState({});
 
-    useEffect(() => {
-        getPortoflioPerformanceChart()
-    }, []);
-    const getPortoflioPerformanceChart = async () => {
-        try {
-            const response = await axios.get(`${config.url}/portfolio/chart/performance`, {
-                headers: {
-                    Authorization: JSON.parse(localStorage.getItem("user")).token,
-                },
-            });
-            setChartJson(response.data)
-            setError("")
-            setIsLoading(false)
-        } catch (error) {
-            console.log(error)
-            setError("Failed to get portfolio performance chart!")
-            setIsLoading(false)
-        }
-    }
-    if (isLoading) {
+    if (Object.keys(chartJson).length === 0) {
         return (
             <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"50vh"}}>
                 <CircularProgress sx={{color: colors.primary[300]}} />

@@ -1,4 +1,4 @@
-import {Box, Typography, Grid, Stack, CircularProgress, useTheme, Divider, Button, Pagination} from "@mui/material";
+import {Box, Typography, Grid, useTheme, Divider, Button, Pagination} from "@mui/material";
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import {tokens} from "../../theme";
 import React, {useState, useEffect} from "react";
@@ -12,19 +12,17 @@ import SellStockForm from "../../components/myPortfolio/SellStockForm";
 import TickerChangeComponent from "../../components/TickerChangeComponent";
 import PortfolioPerformanceChart from "../../components/myPortfolio/PortfolioPerformanceChart";
 import PortfolioStats from "../../components/myPortfolio/PortfolioStats";
-import NewsComponent from "../../components/NewsComponent";
 
 const MyPortfolio = () => {
     const [gainers, setGainers] = useState([]);
     const [losers, setLosers] = useState([]);
     const [personalised, setPersonalised] = useState([]);
     const [holdingsPerformance, setHoldingsPerformance] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [stockBuyOpen, setStockBuyOpen] = useState(false);
     const [stockSellOpen, setStockSellOpen] = useState(false);
-    const [error, setError] = useState({});
-    const [value, setValue] = useState(0);
     const [currentValue, setCurrentValue] = useState('');
+    const [portfolioStats, setPortfolioStats] = useState({});
+    const [chartJson, setChartJson] = useState({});
     const componentsPerPage = 9
     const [totalComponents, setTotalComponents] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
@@ -34,14 +32,6 @@ const MyPortfolio = () => {
 
     const handlePageChange = (event, page) => {
         setCurrentPage(page);
-    };
-
-    const handleSetCurrentValue = (value) => {
-        setCurrentValue(value);
-    };
-
-    const handleChange = (event, newValue) => {
-        setValue(newValue);
     };
 
     const theme = useTheme();
@@ -88,6 +78,7 @@ const MyPortfolio = () => {
         getLosers();
         getPersonalised();
         getHoldingsPerformance();
+        getPortfolioStats();
     }, []);
 
 
@@ -134,6 +125,22 @@ const MyPortfolio = () => {
         }
     }
 
+    const getPortfolioStats = async () => {
+        try{
+            const response = await axios.get(`${config.url}/portfolio/stats`, {
+                headers: {
+                    Authorization: JSON.parse(localStorage.getItem("user")).token,
+                }
+            });
+            setPortfolioStats(response.data)
+            setCurrentValue(response.data.currentValue)
+            setChartJson(JSON.parse(response.data.chartData))
+            setError("")
+        } catch(error){
+            console.log(error)
+            setError("Failed to get portfolio stats!")
+        }
+    }
     const getHoldingsPerformance = async () => {
         try {
             const response = await axios.get(`${config.url}/portfolio/stock/performance`, {
@@ -184,14 +191,14 @@ const MyPortfolio = () => {
                             <SellStockForm open={stockSellOpen} onClose={handleSellClose}/>
                         </Grid>
                     </Grid>
-                    <PortfolioStats onSetCurrentValue={handleSetCurrentValue}/>
-                    <PortfolioPerformanceChart/>
+                    <PortfolioStats portfolioStats={portfolioStats}/>
+                    <PortfolioPerformanceChart chartJson={chartJson}/>
                     {holdingsPerformance.length !== 0 &&
                         (<Box>
                             <Typography variant="h3" style={{textAlign: 'center', marginTop: 0, marginBottom: 10}}>My
                                 Holdings performance</Typography>
                             <Grid container spacing={2} style={{paddingBottom: 30}}>
-                                {visibleHoldingPerfomance.map((item, index) => (
+                                {visibleHoldingPerfomance.map((item) => (
                                     <Grid item xs={4} md={4} key={item.ticker}>
                                         <TickerChangeComponent ticker={item.ticker} change={item.change}/>
                                     </Grid>
@@ -215,7 +222,7 @@ const MyPortfolio = () => {
                     <Typography variant="h3" style={{textAlign: 'center', marginBottom: 10}}>Top gainers
                         today</Typography>
                     <Grid container spacing={2}>
-                        {gainers.map((item, index) => (
+                        {gainers.map((item) => (
                             <Grid item xs={6} md={6} key={item.ticker}>
                                 <TickerChangeComponent ticker={item.ticker} change={item.change}/>
                             </Grid>
@@ -224,7 +231,7 @@ const MyPortfolio = () => {
                     <Typography variant="h3" style={{textAlign: 'center', marginBottom: 10, marginTop: 10}}>Top losers
                         today</Typography>
                     <Grid container spacing={2}>
-                        {losers.map((item, index) => (
+                        {losers.map((item) => (
                             <Grid item xs={6} md={6} key={item.ticker}>
                                 <TickerChangeComponent ticker={item.ticker} change={item.change}/>
                             </Grid>
@@ -234,7 +241,7 @@ const MyPortfolio = () => {
                         <Box><Typography variant="h3" style={{textAlign: 'center', marginBottom: 10, marginTop: 10}}>
                             Stocks for you</Typography>
                             <Grid container spacing={2}>
-                                {personalised.map((item, index) => (
+                                {personalised.map((item) => (
                                     <Grid item xs={6} md={6} key={item.ticker}>
                                         <TickerChangeComponent ticker={item.ticker} change={item.change}/>
                                     </Grid>

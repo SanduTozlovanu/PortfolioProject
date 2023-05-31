@@ -34,7 +34,7 @@ function SettingsDropDown() {
     };
     const resetAccount = async () => {
         try {
-            const response = await axios.delete(`${config.url}/user/reset`,
+            await axios.delete(`${config.url}/user/reset`,
                 {
                     headers: {
                         Authorization: JSON.parse(localStorage.getItem("user")).token,

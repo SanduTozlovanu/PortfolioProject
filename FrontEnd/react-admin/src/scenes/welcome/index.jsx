@@ -17,12 +17,6 @@ const Welcome = () => {
         height: '100vh',
     };
 
-    const registerFormStyle = {
-        display: 'flex',
-        flexDirection: 'column',
-        width: 300,
-    };
-
     const formGroupStyle = {
         display: "flex",
         flexDirection: 'row',

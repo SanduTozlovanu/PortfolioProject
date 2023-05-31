@@ -9,7 +9,6 @@ import NewsComponent from "../../components/NewsComponent";
 
 const News = () => {
     const componentsPerPage = 4;
-    const [error, setError] = useState('');
     const [totalComponents, setTotalComponents] = useState(0);
     const [news, setNews] = useState("");
     const [isLoading, setIsLoading] = useState(true);
@@ -25,7 +24,6 @@ const News = () => {
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const navigate = useNavigate();
 
     useEffect(() => {
         getNews()
@@ -35,7 +33,7 @@ const News = () => {
     const getNews = async () => {
         try{
             const user = JSON.parse(localStorage.getItem("user"))
-            let response = ""
+            let response
             if (user)
             {
                 response = await axios.get(`${config.url}/news`, {

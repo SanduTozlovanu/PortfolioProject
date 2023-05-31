@@ -12,7 +12,6 @@ const PredictionChartComponent = ({stock_name}) => {
     const colors = tokens(theme.palette.mode);
     const [chartJson, setChartJson] = useState({});
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState({});
 
     useEffect(() => {
         getPredictionChart()

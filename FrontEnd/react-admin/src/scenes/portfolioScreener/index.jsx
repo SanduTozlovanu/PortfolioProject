@@ -6,7 +6,6 @@ import axios from "axios";
 import config from "../../config.json";
 import React, {useEffect, useState} from "react";
 import {DataGrid} from "@mui/x-data-grid";
-import AccessibilityIcon from "@mui/icons-material/Accessibility";
 
 const PortfolioScreener = () => {
     const theme = useTheme();
@@ -15,8 +14,6 @@ const PortfolioScreener = () => {
     const {strategy_name} = useParams();
     const [portfolioData, setPortfolioData] = useState([]);
     const [columns, setColumns] = useState([]);
-    const [residualCash, setResidualCash] = useState(null);
-    const [error, setError] = useState({});
     const [isLoading, setIsLoading] = useState(true);
     let title = ''
     switch (strategy_name) {
@@ -49,7 +46,7 @@ const PortfolioScreener = () => {
     };
     const BuyGeneratedPortfolio = async () => {
         try {
-            const response = await axios.post(`${config.url}/portfolio/stock/buy/batch`,
+            await axios.post(`${config.url}/portfolio/stock/buy/batch`,
                 {
                     portfolioData
                 },

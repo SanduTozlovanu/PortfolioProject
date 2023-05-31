@@ -9,7 +9,7 @@ const FinancialStats = ({stock_name}) => {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
     const [finStats, setFinStats] = useState({});
-    const [error, setError] = useState({});
+    const [, setError] = useState({});
 
     useEffect(() => {
         getFinancialStats()

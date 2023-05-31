@@ -1,4 +1,4 @@
-import {Box, Typography, Grid, Divider, CircularProgress, useTheme} from "@mui/material";
+import {Box, CircularProgress, Divider, Grid, Typography, useTheme} from "@mui/material";
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 import PeopleIcon from '@mui/icons-material/People';
@@ -6,8 +6,8 @@ import EqualizerIcon from '@mui/icons-material/Equalizer';
 import TimelineIcon from '@mui/icons-material/Timeline';
 import AccountBalanceIcon from '@mui/icons-material/AccountBalance';
 import {tokens} from "../../theme";
-import {useNavigate, useParams} from 'react-router-dom';
-import {useState, useEffect} from "react";
+import {useParams} from 'react-router-dom';
+import {useEffect, useState} from "react";
 import config from "../../config.json";
 import axios from "axios";
 import Topbar from "../global/Topbar";
@@ -20,10 +20,8 @@ import PredictionChartComponent from "../../components/PredictionChartComponent"
 const StockProfile = () => {
     const [profile, setProfile] = useState({});
     const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState({});
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const navigate = useNavigate();
     const {stock_name} = useParams();
     const getMarketCap = () => {
         const nr = (profile.mktCap / 1000000000).toFixed(1)

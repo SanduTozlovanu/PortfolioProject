@@ -1,8 +1,5 @@
 import {Box, CardContent, CardMedia, Card, Link, Typography, useTheme} from "@mui/material";
 import React from "react";
-import SkipPreviousIcon from '@mui/icons-material/SkipPrevious';
-import PlayArrowIcon from '@mui/icons-material/PlayArrow';
-import SkipNextIcon from '@mui/icons-material/SkipNext';
 import {tokens} from "../theme";
 import TickerChangeComponent from "./TickerChangeComponent";
 

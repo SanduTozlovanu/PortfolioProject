@@ -40,7 +40,7 @@ const Item = ({title, to, icon, selected, setSelected}) => {
 function Sidebar({onToggleCollapse}) {
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
-    const {isAuthenticated, setIsAuthenticated, name, setName} = useContext(Authcontext);
+    const {isAuthenticated, name} = useContext(Authcontext);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [selected, setSelected] = useState("Dashboard");
 

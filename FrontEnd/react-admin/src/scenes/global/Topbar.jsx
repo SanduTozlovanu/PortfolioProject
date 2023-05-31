@@ -21,7 +21,7 @@ import Authcontext from "../../components/AuthContext";
 const Topbar = ({title, subtitle, ticker, isTicker}) => {
     const theme = useTheme();
     const colorMode = useContext(ColorModeContext);
-    const {isAuthenticated, setIsAuthenticated, name, setName} = useContext(Authcontext);
+    const {isAuthenticated} = useContext(Authcontext);
     let link = "https://financialmodelingprep.com/image-stock/" + ticker + ".png"
     let isMyPortfolio = (ticker === "myPortfolio");
     let isNews = (ticker === "news");

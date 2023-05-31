@@ -15,7 +15,7 @@ const TickerChangeComponent = ({ticker, change}) => {
     let link = "https://financialmodelingprep.com/image-stock/" + ticker + ".png"
     return (
         <Box display="flex" justifyContent="space-between" backgroundColor={colors.blueAccent[800]} style={{cursor: "pointer"}}
-             borderRadius="0.55rem" p="0.5rem 0.5rem" onClick={(e) => navigate(`/stockProfile/${ticker}`)}>
+             borderRadius="0.55rem" p="0.5rem 0.5rem" onClick={() => navigate(`/stockProfile/${ticker}`)}>
             <Box display="flex">
                 <Avatar src={link} alt="Image" style={{width: "20px", height: "20px"}}/>
                 <Typography variant="h5" style={{marginLeft:5}}>{ticker}</Typography>

@@ -1,19 +1,13 @@
-import {Box, Typography, IconButton, FormHelperText, useTheme} from "@mui/material";
+import {Box, useTheme} from "@mui/material";
 import {DataGrid} from "@mui/x-data-grid";
 import {tokens} from "../../theme";
-import {stockScreenerFilters} from "../../data/data";
-import { useNavigate } from 'react-router-dom';
-import Select from "../../components/SelectComponent";
 import {useState, useEffect} from "react";
-import SearchIcon from '@mui/icons-material/Search';
 import config from "../../config.json";
 import axios from "axios";
-import InputBase from "@mui/material/InputBase";
 import Topbar from "../global/Topbar";
 
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
-    const [error, setError] = useState('');
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);

@@ -5,7 +5,6 @@ import {tokens} from "../../theme";
 import {useNavigate} from "react-router-dom";
 import config from "../../config.json";
 import axios from "axios";
-import {width} from "@mui/system";
 
 
 const Confirm = () => {
@@ -36,7 +35,7 @@ const Confirm = () => {
             return setError("You must fill in the code.")
         }
         try {
-            const response = await axios.post(`${config.url}/user/confirm`,
+            await axios.post(`${config.url}/user/confirm`,
                 {
                     code: code,
                     email: email
@@ -53,7 +52,7 @@ const Confirm = () => {
             return
         }
         try {
-            const response = await axios.post(`${config.url}/user/confirm/resend`,
+            await axios.post(`${config.url}/user/confirm/resend`,
                 {
                     email: email
                 });

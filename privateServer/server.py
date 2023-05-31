@@ -445,7 +445,7 @@ def get_portfolio_stats():
         stocks: Stock = Stock.query.filter(Stock.portfolio_id == portfolio.id).all()
         stats: PortfolioStatsDto = portfolio_analyser.get_portfolio_stats(len(stocks), transactions, user.created_on,
                                                                           portfolio.initial_money)
-        return make_response(stats.to_json(), 200)
+        return make_response(jsonify(stats.__dict__), 200)
     except Exception as exc:
         print(exc)
         return make_response("Server Error", 500)
