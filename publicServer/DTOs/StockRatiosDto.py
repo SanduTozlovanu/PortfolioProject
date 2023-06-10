@@ -1,5 +1,5 @@
-from publicServer.DataCollector.Database.Models.KeyMetrics import KeyMetrics
-from publicServer.DataCollector.Database.Models.Ratios import Ratios
+from publicServer.Database.Models.KeyMetrics import KeyMetrics
+from publicServer.Database.Models.Ratios import Ratios
 
 
 class StockRatiosDto:

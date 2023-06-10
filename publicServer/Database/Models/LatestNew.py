@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Date
 from datetime import datetime
-from publicServer.DataCollector.Database.JsonAble import JsonAble
-from publicServer.DataCollector.Database.base import Base
+from publicServer.Database.JsonAble import JsonAble
+from publicServer.Database.base import Base
 
 
 class LatestNew(Base, JsonAble):

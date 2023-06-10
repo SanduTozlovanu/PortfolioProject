@@ -37,18 +37,11 @@ class PortfolioAnalyser:
         print(df)
 
         for hold_period in hold_periods:
-            try:
-                if hold_period.end_date is None:
-                    df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date)
-                else:
-                    df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date,
-                                                       end=hold_period.end_date)
-            except AttributeError:
-                if hold_period.end_date is None:
-                    df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date)
-                else:
-                    df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date,
-                                                       end=hold_period.end_date)
+            if hold_period.end_date is None:
+                df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date)
+            else:
+                df2 = self.dataframe_collector.get(hold_period.ticker, start=hold_period.start_date,
+                                                   end=hold_period.end_date)
             if df2.shape[0] < 2 and df2['Date'][0].strftime("%Y-%m-%d") != hold_period.start_date.strftime(
                     "%Y-%m-%d"):
                 print(hold_period.start_date.strftime("%Y-%m-%d"))
@@ -114,7 +107,7 @@ class PortfolioAnalyser:
         HoldPeriod]:  # lets suppose that transactions are sorted by date
         hold_periods_to_return: list[HoldPeriod] = []
         if not transactions[0].is_buy:
-            print("Wrong data, there should be a buy first ! WTF")
+            print("Wrong data, there should be a buy first !")
         ticker: str = transactions[0].ticker
         current_quantity: int = transactions[0].quantity
         last_date: datetime = transactions[0].date
@@ -130,8 +123,6 @@ class PortfolioAnalyser:
         if current_quantity != 0:
             hold_periods_to_return.append(
                 HoldPeriod(ticker=ticker, quantity=current_quantity, start_date=last_date, end_date=None))
-        else:
-            print("wtf")
 
         return hold_periods_to_return
 

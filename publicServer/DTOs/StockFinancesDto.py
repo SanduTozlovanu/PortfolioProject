@@ -1,8 +1,8 @@
-from publicServer.DataCollector.Database.Models.Balance import Balance
-from publicServer.DataCollector.Database.Models.FinancialStatement import FinancialStatement
-from publicServer.DataCollector.Database.Models.KeyMetrics import KeyMetrics
-from publicServer.DataCollector.Database.Models.Ratios import Ratios
-from publicServer.DataCollector.Database.Models.Score import Score
+from publicServer.Database.Models.Balance import Balance
+from publicServer.Database.Models.FinancialStatement import FinancialStatement
+from publicServer.Database.Models.KeyMetrics import KeyMetrics
+from publicServer.Database.Models.Ratios import Ratios
+from publicServer.Database.Models.Score import Score
 
 
 class StockFinancesDto:

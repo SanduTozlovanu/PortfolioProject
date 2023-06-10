@@ -3,8 +3,8 @@ from abc import ABC
 import requests
 
 from publicServer.DataCollector.Commands.Command import Command
-from publicServer.DataCollector.Database.Models.Company import Company
-from publicServer.DataCollector.Database.session import db
+from publicServer.Database.Models.Company import Company
+from publicServer.Database.session import db
 from publicServer.config.constants import API_ENDPOINT, ONE_DAY
 from publicServer.config.definitions import KEY_URL
 

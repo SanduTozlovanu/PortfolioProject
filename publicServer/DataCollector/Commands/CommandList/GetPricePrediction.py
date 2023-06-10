@@ -1,14 +1,13 @@
 from abc import ABC
 
 import yfinance as yf
-from matplotlib import pyplot as plt
 from prophet import Prophet
 from prophet.plot import plot_plotly
 
 from publicServer.DataCollector.Commands.Command import Command
-from publicServer.DataCollector.Database.Models.Company import Company
-from publicServer.DataCollector.Database.Models.PricePrediction import PricePrediction
-from publicServer.DataCollector.Database.session import db
+from publicServer.Database.Models.Company import Company
+from publicServer.Database.Models.PricePrediction import PricePrediction
+from publicServer.Database.session import db
 from publicServer.config.constants import ONE_MINUTE
 
 

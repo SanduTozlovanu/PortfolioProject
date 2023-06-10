@@ -2,8 +2,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, String, Integer, BigInteger, Float, Date
 
-from publicServer.DataCollector.Database.JsonAble import FinancialStatementJsonAble
-from publicServer.DataCollector.Database.base import Base
+from publicServer.Database.JsonAble import FinancialStatementJsonAble
+from publicServer.Database.base import Base
 
 
 class FinancialStatement(Base, FinancialStatementJsonAble):

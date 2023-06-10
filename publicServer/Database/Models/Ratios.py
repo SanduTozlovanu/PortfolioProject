@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Float
 
-from publicServer.DataCollector.Database.JsonAble import JsonAble
-from publicServer.DataCollector.Database.base import Base
+from publicServer.Database.JsonAble import JsonAble
+from publicServer.Database.base import Base
 
 
 class Ratios(Base, JsonAble):

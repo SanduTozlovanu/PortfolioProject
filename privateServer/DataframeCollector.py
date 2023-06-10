@@ -1,5 +1,4 @@
 import json
-import time
 import requests
 from sqlalchemy import and_
 import yfinance as yf
@@ -30,7 +29,7 @@ class DataframeCollector:
     @staticmethod
     def populate_database():
         db.session.query(StockPriceDataframe).delete()
-        ticker_list = requests.get("http://127.0.0.1:6000/api/ticker_list").json()
+        ticker_list = requests.get("http://127.0.0.1:6000/api/stock/ticker_list").json()
         ticker_list.append("^GSPC")
         company_list = ""
         for ticker in ticker_list:

@@ -1,41 +1,24 @@
 import functools
 import json
 import threading
-from sqlite3 import Row
+import traceback
+from urllib.parse import urlencode
 
 import jwt
 import requests
-import yfinance as yf
 from flask import make_response, request, Flask, jsonify
-from plotly import graph_objs as go
-from sqlalchemy import or_, and_
-from urllib.parse import urlencode
 
 from JWTHelper import JWTHandler
-from publicServer.DTOs.CompanySelectDataDto import CompanySelectDataDto
-from publicServer.DTOs.RevenueChartBarDto import RevenueChartBarDto
-from publicServer.DTOs.SearchStockDto import SearchStockDto
-from publicServer.DTOs.StockBasedataDto import StockBasedataDto
-from publicServer.DTOs.StockFinancesDto import StockFinancesDto
-from publicServer.DTOs.StockPriceChangeDto import StockPriceChangeDto
-from publicServer.DTOs.StockRatiosDto import StockRatiosDto
-from publicServer.DTOs.TickerPriceDto import TickerPriceDto
-from publicServer.DTOs.NewsDto import NewsDto
-from publicServer.DataCollector.Database.Models.Balance import Balance
-from publicServer.DataCollector.Database.Models.Company import Company
-from publicServer.DataCollector.Database.Models.CompanyProfile import CompanyProfile
-from publicServer.DataCollector.Database.Models.FinancialStatement import FinancialStatement
-from publicServer.DataCollector.Database.Models.KeyMetrics import KeyMetrics
-from publicServer.DataCollector.Database.Models.LatestNew import LatestNew
-from publicServer.DataCollector.Database.Models.PricePrediction import PricePrediction
-from publicServer.DataCollector.Database.Models.Ratios import Ratios
-from publicServer.DataCollector.Database.Models.Score import Score
-from publicServer.DataCollector.Database.Models.StockPrice import StockPrice
-from publicServer.DataCollector.Database.session import db
+from exceptions import NotFoundException, BadRequestException, UnauthorizedException, ForbiddenException, \
+    ConflictException
 from publicServer.DataCollector.collectorCore import runCollector
-from publicServer.SimilarityChecker import find_most_similar_strings
-from publicServer.config.constants import API_ENDPOINT
-from publicServer.config.definitions import SECRET_KEY, KEY_URL
+from publicServer.config.definitions import SECRET_KEY
+from publicServer.controllers.ChartController import ChartController
+from publicServer.controllers.NewsController import NewsController
+from publicServer.controllers.SearchController import SearchController
+from publicServer.controllers.StockFinancialsController import StockFinancialsController
+from publicServer.controllers.StockPriceController import StockPriceController
+from publicServer.controllers.StockProfileController import StockProfileController
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = SECRET_KEY
@@ -86,446 +69,176 @@ def jwt_required(func):
     return decorator
 
 
+def exception_catcher(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except NotFoundException as exc:
+            return make_response(exc.msg, 404)
+        except BadRequestException as exc:
+            return make_response(exc.msg, 400)
+        except UnauthorizedException as exc:
+            return make_response(exc.msg, 401)
+        except ForbiddenException as exc:
+            return make_response(exc.msg, 403)
+        except ConflictException as exc:
+            return make_response(exc.msg, 409)
+        except Exception as exc:
+            traceback.print_exc()
+            return make_response("Internal server error", 500)
+
+    return wrapper
+
+
+def base_decorators(func):
+    @jwt_required
+    @exception_catcher
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
 @app.route('/api/stock/details/<company_ticker>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_company_details(company_ticker):
-    try:
-        company_profile = db.query(CompanyProfile).filter(CompanyProfile.ticker == company_ticker).first()
-        if company_profile is None:
-            return make_response("Company not found", 404)
-        return make_response(company_profile.as_dict(), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    company_profile = StockProfileController.receive_company_details(company_ticker)
+    return make_response(company_profile.as_dict(), 200)
 
 
 @app.route('/api/stock/losers', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_top_losers():
-    try:
-        losers_to_return = []
-        stock_price_list: list[StockPrice] = db.query(StockPrice).order_by(StockPrice.change.asc()).limit(6).all()
-        for stock_price in stock_price_list:
-            losers_to_return.append(TickerPriceDto(stock_price.ticker, stock_price.change))
-        return make_response(jsonify([loserDto.__dict__ for loserDto in losers_to_return]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    loosers = StockPriceController.receive_top_loosers()
+    return make_response(jsonify([loserDto.__dict__ for loserDto in loosers]), 200)
 
 
 @app.route('/api/stock/gainers', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_top_gainers():
-    try:
-        gainers_to_return = []
-        stock_price_list: list[StockPrice] = db.query(StockPrice).order_by(StockPrice.change.desc()).limit(6).all()
-        for stock_price in stock_price_list:
-            gainers_to_return.append(TickerPriceDto(stock_price.ticker, stock_price.change))
-        return make_response(jsonify([gainerDto.__dict__ for gainerDto in gainers_to_return]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    gainers = StockPriceController.receive_top_gainers()
+    return make_response(jsonify([gainerDto.__dict__ for gainerDto in gainers]), 200)
 
 
 @app.route('/api/stock/similar/<ticker_list>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_similar_stocks(ticker_list):
-    try:
-        similars_to_return = []
-        company_list = ticker_list.split(",")
-        similar_company_list = []
-        companyObject = None
-        for company_ticker in company_list:
-            companyObject: CompanyProfile = db.query(CompanyProfile).filter(
-                CompanyProfile.ticker == company_ticker).first()
-            similar_company_list += db.query(CompanyProfile). \
-                filter(
-                and_(companyObject.sector == CompanyProfile.sector, companyObject.industry == CompanyProfile.industry,
-                     CompanyProfile.ticker != companyObject.ticker)).limit(6 - len(similar_company_list)).all()
-
-            if len(similar_company_list) == 6:
-                break
-        if len(similar_company_list) < 6:
-            similar_company_list += db.query(CompanyProfile).filter(and_(CompanyProfile.sector == companyObject.sector,
-                                                                         CompanyProfile.ticker != companyObject.ticker)).limit(
-                6 - len(similar_company_list)).all()
-        similar_stock_price_list: list[StockPrice] = db.query(StockPrice).filter(
-            or_(StockPrice.ticker == similar_company_list[0].ticker,
-                StockPrice.ticker == similar_company_list[1].ticker,
-                StockPrice.ticker == similar_company_list[2].ticker,
-                StockPrice.ticker == similar_company_list[3].ticker,
-                StockPrice.ticker == similar_company_list[4].ticker,
-                StockPrice.ticker == similar_company_list[5].ticker)).all()
-        for company in similar_stock_price_list:
-            similars_to_return.append(TickerPriceDto(company.ticker, company.change))
-        return make_response(jsonify([similarDto.__dict__ for similarDto in similars_to_return]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    similars_to_return = SearchController.receive_similar_stocks(ticker_list)
+    return make_response(jsonify([similarDto.__dict__ for similarDto in similars_to_return]), 200)
 
 
 @app.route('/api/stock/select', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_companies_select_data():
-    try:
-        tickers_to_return = []
-        company_select_data_list: list = db.query(Company.ticker, Company.name, StockPrice.price).filter(
-            Company.ticker == StockPrice.ticker).all()
-        for select_data in company_select_data_list:
-            tickers_to_return.append(
-                CompanySelectDataDto(select_data["name"], select_data["ticker"], select_data["price"]))
-        return make_response(jsonify([tickerSelectDto.__dict__ for tickerSelectDto in tickers_to_return]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
-
-
-@app.route('/api/stock/statement/list/<company_ticker>', methods=['GET'])
-@jwt_required
-def get_financial_statement_list(company_ticker):
-    try:
-        company_financial_statement_list = db.query(FinancialStatement.title).filter(
-            FinancialStatement.ticker == company_ticker).all()
-        if company_financial_statement_list is None or len(company_financial_statement_list) == 0:
-            return make_response("Company not found", 404)
-        list_to_return = []
-        for row in company_financial_statement_list:
-            row: Row
-            list_to_return.append(row["title"])
-        return make_response(list_to_return, 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    tickers_to_return = StockProfileController.receive_companies_select_data()
+    return make_response(jsonify([tickerSelectDto.__dict__ for tickerSelectDto in tickers_to_return]), 200)
 
 
 @app.route('/api/stock/statement/last/<company_name>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_financial_statement(company_name):
-    try:
-        company_financial_statement = db.query(FinancialStatement).filter(
-            FinancialStatement.ticker == company_name).order_by(FinancialStatement.date.desc()).first()
-        if company_financial_statement is None:
-            return make_response("Company not found", 404)
-        return make_response(company_financial_statement.as_dict(), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    company_financial_statement = StockFinancialsController.receive_financial_statement(company_name)
+    return make_response(company_financial_statement.as_dict(), 200)
 
 
 @app.route('/api/stock/finances/<company_ticker>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_company_finances(company_ticker):
-    try:
-        company_balance: Balance = db.query(Balance).filter(
-            Balance.ticker == company_ticker).first()
-        if company_balance is None:
-            return make_response("Company balance not found", 404)
-
-        company_ratios: Ratios = db.query(Ratios).filter(
-            Ratios.ticker == company_ticker).first()
-        if company_ratios is None:
-            return make_response("Company ratios not found", 404)
-
-        company_key_metrics: KeyMetrics = db.query(KeyMetrics).filter(
-            KeyMetrics.ticker == company_ticker).first()
-        if company_key_metrics is None:
-            return make_response("Company key metrics not found", 404)
-
-        company_score: Score = db.query(Score).filter(
-            Score.ticker == company_ticker).first()
-        if company_score is None:
-            return make_response("Company score not found", 404)
-
-        company_statement: FinancialStatement = db.query(FinancialStatement).filter(
-            FinancialStatement.ticker == company_ticker).order_by(FinancialStatement.date.desc()).first()
-        if company_statement is None:
-            return make_response("Company financial statement", 404)
-        stock_finances_dto = StockFinancesDto(balance=company_balance, ratios=company_ratios, score=company_score,
-                                              key_metrics=company_key_metrics, statement=company_statement)
-        return make_response(jsonify(stock_finances_dto.__dict__), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    stock_finances_dto = StockFinancialsController.receive_company_finances(company_ticker)
+    return make_response(jsonify(stock_finances_dto.__dict__), 200)
 
 
 @app.route('/api/stock/price/<company_list>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_companies_price(company_list):
-    try:
-        response_dict = {}
-        company_list = company_list.split(",")
-        for company in company_list:
-            price = db.query(StockPrice.price).filter(
-                StockPrice.ticker == company).first()
-            if price is None:
-                return make_response("Company not found", 404)
-            response_dict[company] = price["price"]
-
-        return make_response(response_dict, 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    response_dict = StockPriceController.receive_companies_price(company_list)
+    return make_response(response_dict, 200)
 
 
 @app.route('/api/stock/priceChange/<company_tickers>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_tickers_price_change(company_tickers):
-    try:
-        response_list = []
-        company_list = company_tickers.split(",")
-        for ticker in company_list:
-            stockPrice = db.query(StockPrice).filter(
-                StockPrice.ticker == ticker).first()
-            if stockPrice is None:
-                return make_response("ticker not found", 404)
-            response_list.append(TickerPriceDto(ticker, stockPrice.change))
-
-        return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    response_list = StockPriceController.receive_tickers_price_change(company_tickers)
+    return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
 
 
 @app.route('/api/stock/chart/price/<company_ticker>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_company_price_chart(company_ticker):
-    try:
-        company = db.query(Company).filter(Company.ticker == company_ticker).first()
-        if company is None:
-            return make_response("Company not found", 404)
-        data = yf.download(company_ticker, period="max")
-        data.reset_index(inplace=True)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=data['Date'], y=data['Close'], name="stock_close"))
-        fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
-        return make_response(fig.to_json(), 200)
-    except:
-        return make_response("Internal server error", 500)
+    fig = ChartController.receive_company_price_chart(company_ticker)
+    return make_response(fig.to_json(), 200)
 
 
 @app.route('/api/stock/chart/prediction/<company_ticker>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_company_price_prediction(company_ticker):
-    try:
-        prediction: PricePrediction = db.query(PricePrediction).filter(PricePrediction.ticker == company_ticker).first()
-        if prediction is None:
-            return make_response("Prediction not found", 404)
-        return make_response(json.loads(prediction.jsonData), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    prediction = ChartController.receive_company_price_prediction(company_ticker)
+    return make_response(json.loads(prediction.jsonData), 200)
 
 
 @app.route('/api/stock/chart/revenue/<company_ticker>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_company_revenue_chart(company_ticker):
-    try:
-        returned_dtos = []
-        statements_list: list[FinancialStatement] = db.query(FinancialStatement).filter(
-            FinancialStatement.ticker == company_ticker).order_by(FinancialStatement.date.asc()).all()
-        if len(statements_list) == 0:
-            return make_response("No financial statement found for this company_ticker", 404)
-        for statement in statements_list:
-            returned_dtos.append(RevenueChartBarDto(statement.date, statement.revenue))
-        return make_response(jsonify([revenue_dto.__dict__ for revenue_dto in returned_dtos]), 200)
-    except:
-        return make_response("Internal server error", 500)
+    returned_dtos = ChartController.receive_company_revenue_chart(company_ticker)
+    return make_response(jsonify([revenue_dto.__dict__ for revenue_dto in returned_dtos]), 200)
 
 
 @app.route('/api/stock/search/<company>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_search_stocks(company):
-    try:
-        full_company_list = []
-        companies = db.query(CompanyProfile.ticker, CompanyProfile.companyName).all()
-        for entry in companies:
-            full_company_list.append(entry["companyName"])
-            full_company_list.append(entry["ticker"])
-
-        similar_strings = find_most_similar_strings(company, full_company_list)
-        returned_companies = []
-        for string in similar_strings:
-            received_company: CompanyProfile = db.query(CompanyProfile.companyName, CompanyProfile.mktCap,
-                                                        CompanyProfile.ticker,
-                                                        CompanyProfile.sector, CompanyProfile.beta).filter(or_(
-                CompanyProfile.ticker == string, CompanyProfile.companyName == string)).first()
-            if received_company is None:
-                continue
-
-            price = db.query(StockPrice.price).filter(
-                StockPrice.ticker == received_company["ticker"]).first()
-            returned_companies.append(SearchStockDto(len(returned_companies) + 1, received_company["companyName"],
-                                                     received_company["ticker"], received_company["mktCap"],
-                                                     received_company["beta"], price["price"],
-                                                     received_company["sector"]))
-
-        return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    returned_companies = SearchController.receive_search_stocks(company)
+    return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
 
 
 @app.route('/api/stock/search', methods=['GET'])
-@jwt_required
+@base_decorators
 def search_query():
-    try:
-        query_string = urlencode(request.args)
-        url = API_ENDPOINT + "v3/stock-screener?" + query_string + "&" + KEY_URL
-        response = requests.get(API_ENDPOINT + "v3/stock-screener?" + query_string + "&" + KEY_URL).json()
-        company_profiles = db.query(CompanyProfile.ticker).all()
-        companies_to_return = []
-
-        for company1 in company_profiles:
-            company1: CompanyProfile
-            for company2 in response:
-                if company2["symbol"] == company1.ticker:
-                    if "marketCap" not in company2:
-                        market_cap = "Unknown"
-                    else:
-                        market_cap = company2["marketCap"]
-                    companies_to_return.append(SearchStockDto(len(companies_to_return) + 1, company2["companyName"],
-                                                              company2["symbol"], market_cap, company2["beta"],
-                                                              company2["price"], company2["sector"]))
-                    break
-
-        return make_response(jsonify([company_dto.__dict__ for company_dto in companies_to_return]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    companies_to_return = SearchController.search_query(urlencode(request.args))
+    return make_response(jsonify([company_dto.__dict__ for company_dto in companies_to_return]), 200)
 
 
 @app.route('/api/new/latest', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_latest_new():
-    try:
-        new = db.query(LatestNew).order_by(LatestNew.date.desc()).first()
-        news_dto = NewsDto(ticker=new.ticker, change=0, date=new.date, image=new.image,
-                text=new.text, url=new.url, title=new.title, site=new.site)
-        return make_response(jsonify(news_dto.__dict__))
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    new = NewsController.receive_latest_new()
+    return make_response(jsonify(new.__dict__))
 
 
 @app.route('/api/news/<ticker_list>', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_latest_news(ticker_list):
-    try:
-        news_dtos: list[NewsDto] = []
-        if ticker_list == "all":
-            latest_news_list: list[LatestNew] = db.query(LatestNew).order_by(LatestNew.date.desc()).limit(40).all()
-            for new in latest_news_list:
-                stock_price: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == new.ticker).first()
-                if stock_price is None:
-                    return make_response("ticker stock price not found", 404)
-                news_dtos.append(NewsDto(ticker=new.ticker, change=stock_price.change, date=new.date, image=new.image,
-                                         text=new.text, url=new.url, title=new.title, site=new.site))
-        else:
-            ticker_list = ticker_list.split(",")
-            latest_news_list: list[LatestNew] = []
-            titles_used = []
-            for ticker in ticker_list:
-                new_list = db.query(LatestNew).filter(LatestNew.ticker == ticker).order_by(LatestNew.date.desc()).limit(
-                    2).all()
-                for new in new_list:
-                    titles_used.append(new.title)
-                latest_news_list += new_list
-            latest_news_list += db.query(LatestNew).filter(LatestNew.title not in titles_used).order_by(
-                LatestNew.date.desc()).limit(40 - len(latest_news_list)).all()
-            for new in latest_news_list:
-                stock_price: StockPrice = db.query(StockPrice).filter(StockPrice.ticker == new.ticker).first()
-                if stock_price is None:
-                    return make_response("ticker stock price not found", 404)
-                news_dtos.append(NewsDto(ticker=new.ticker, change=stock_price.change, date=new.date, image=new.image,
-                                         text=new.text, url=new.url, title=new.title, site=new.site))
-
-        news_dtos.sort(key=lambda dto: dto.date, reverse=True)
-        return make_response(jsonify([new_dto.__dict__ for new_dto in news_dtos]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    news = NewsController.receive_latest_news(ticker_list)
+    return make_response(jsonify([new_dto.__dict__ for new_dto in news]), 200)
 
 
 @app.route('/api/stock/ratios', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_companies_ratios():
-    try:
-        stock_ratios_dtos: list[StockRatiosDto] = []
-        snp_list: list[Company] = db.query(Company).all()
-        for company in snp_list:
-            company_ratios: Ratios = db.query(Ratios).filter(
-                Ratios.ticker == company.ticker).first()
-            if company_ratios is None:
-                return make_response("Company ratios not found", 404)
-
-            company_key_metrics: KeyMetrics = db.query(KeyMetrics).filter(
-                KeyMetrics.ticker == company.ticker).first()
-            if company_key_metrics is None:
-                return make_response("Company key metrics not found", 404)
-
-            stockPrice: StockPrice = db.query(StockPrice).filter(
-                StockPrice.ticker == company.ticker).first()
-            if stockPrice is None:
-                return make_response("ticker not found", 404)
-
-            stock_ratios_dtos.append(
-                StockRatiosDto(ratios=company_ratios, key_metrics=company_key_metrics, price=stockPrice.price))
-        return make_response(jsonify([stock_ratio_dto.__dict__ for stock_ratio_dto in stock_ratios_dtos]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    stock_ratios_dtos = StockFinancialsController.receive_companies_ratios()
+    return make_response(jsonify([stock_ratio_dto.__dict__ for stock_ratio_dto in stock_ratios_dtos]), 200)
 
 
-@app.route('/api/stock/priceChange', methods=['GET'])
-@jwt_required
+@app.route('/api/stock/priceChanges', methods=['GET'])
+@base_decorators
 def get_all_tickers_price_change():
-    try:
-        response_list: list[StockPriceChangeDto] = []
-        company_list: list[Company] = db.query(Company).all()
-        for company in company_list:
-            stockPrice: StockPrice = db.query(StockPrice).filter(
-                StockPrice.ticker == company.ticker).first()
-            if stockPrice is None:
-                return make_response("ticker not found", 404)
-            response_list.append(
-                StockPriceChangeDto(ticker=company.ticker, price=stockPrice.price, yearChange=stockPrice.yearChange))
-
-        return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    response_list = StockPriceController.receive_all_tickers_price_change()
+    return make_response(jsonify([priceDto.__dict__ for priceDto in response_list]), 200)
 
 
 @app.route('/api/stock/basedata', methods=['GET'])
-@jwt_required
+@base_decorators
 def get_stocks_basedata():
-    try:
-        companies: list[CompanyProfile] = db.query(CompanyProfile).all()
-        returned_companies: list[StockBasedataDto] = []
-        for company in companies:
-            stock_price: StockPrice = db.query(StockPrice).filter(
-                StockPrice.ticker == company.ticker).first()
-            returned_companies.append(
-                StockBasedataDto(ticker=company.ticker, marketCap=company.mktCap, price=stock_price.price))
-
-        return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    returned_companies = StockProfileController.receive_stocks_basedata()
+    return make_response(jsonify([company_dto.__dict__ for company_dto in returned_companies]), 200)
 
 
-@app.route('/api/ticker_list', methods=['GET'])
+@app.route('/api/stock/ticker_list', methods=['GET'])
+@exception_catcher
 def get_ticker_list():
-    try:
-        companies: list[Company] = db.query(Company).all()
-        ticker_list = []
-        for company in companies:
-            ticker_list.append(company.ticker)
-
-        return make_response(ticker_list, 200)
-    except Exception as exc:
-        print(exc)
-        return make_response("Internal server error", 500)
+    ticker_list = StockProfileController.receive_ticker_list()
+    return make_response(ticker_list, 200)
 
 
 def app_run():

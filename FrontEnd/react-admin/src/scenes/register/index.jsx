@@ -23,7 +23,15 @@ const Register = () => {
         let finalValue = parseInt(portfolioBalance, 10);
         if (isNaN(finalValue)) {
             finalValue = '';
+            if (portfolioBalance)
+            {
+                setError("Portfolio Balance should be a number")
+            }
         } else {
+            if(error === "Portfolio Balance should be a number")
+            {
+                setError("")
+            }
             finalValue = Math.min(Math.max(finalValue, 10000), 1000000);
         }
         setPortfolioBalance(finalValue.toString());
@@ -114,7 +122,7 @@ const Register = () => {
                     <TextField label="Email" type="email" fullWidth onChange={(e) => setEmail(e.target.value)}/>
                 </Box>
                 <Box style={formGroupStyle}>
-                    <TextField label="Portfolio Balance" type="text" fullWidth  onBlur={handleInputBlur} onChange={(e) => setPortfolioBalance(e.target.value)}/>
+                    <TextField label="Portfolio Balance" type="number" fullWidth  onBlur={handleInputBlur} onChange={(e) => setPortfolioBalance(e.target.value)}/>
                 </Box>
                 <Box style={formGroupStyle}>
                     <TextField label="Password" type="password" fullWidth onChange={(e) => setPassword(e.target.value)}/>
@@ -123,12 +131,7 @@ const Register = () => {
                     <TextField label="Confirm Password" type="password" fullWidth onChange={(e) => setConfirmPassword(e.target.value)}/>
                 </Box>
                 {error?<Typography color={'#eb6157'} style={{textAlign: "center"}}>{error}</Typography>: null}
-                <Button
-                    variant="contained"
-                    size="large"
-                    style={registerBtnStyle}
-                    onClick={register}
-                >
+                <Button variant="contained" size="large" style={registerBtnStyle} onClick={register}>
                     Register
                 </Button>
             </FormControl>

@@ -1,10 +1,10 @@
-import {Box, Typography, IconButton, FormHelperText, useTheme} from "@mui/material";
+import {Box, Typography, IconButton, FormHelperText, useTheme, CircularProgress} from "@mui/material";
 import {DataGrid} from "@mui/x-data-grid";
 import {tokens} from "../../theme";
 import {stockScreenerFilters} from "../../data/data";
 import { useNavigate } from 'react-router-dom';
 import Select from "../../components/SelectComponent";
-import {useState, useEffect} from "react";
+import React, {useState, useEffect} from "react";
 import SearchIcon from '@mui/icons-material/Search';
 import config from "../../config.json";
 import axios from "axios";
@@ -14,6 +14,7 @@ import Topbar from "../global/Topbar";
 const StockScreener = () => {
     const [stocks, setStocks] = useState([]);
     const [error, setError] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
     const [marketCapRange, setMarketCapRange] = useState("");
     const [priceRange, setPriceRange] = useState("");
     const [betaRange, setBetaRange] = useState("");
@@ -46,9 +47,11 @@ const StockScreener = () => {
             const response = await axios.get(`${config.url}/stock/search${queryParams}`);
             setStocks(response.data)
             setError("")
+            setIsLoading(false)
         } catch(error){
             console.log(error)
             setError("Failed to get search stocks!")
+            setIsLoading(false)
         }
     }
     const searchStock = async () => {
@@ -58,9 +61,11 @@ const StockScreener = () => {
             const response = await axios.get(`${config.url}/stock/search/${selectedStock}`);
             setStocks(response.data)
             setError("")
+            setIsLoading(false)
         } catch(error){
             console.log(error)
             setError("Failed to get search stocks!")
+            setIsLoading(false)
         }
     }
     const composeQueryParams = () => {
@@ -131,7 +136,6 @@ const StockScreener = () => {
             width:150
         }
     ];
-
     return (
         <Box m="20px">
             <Topbar title="STOCK SCREENER" subtitle="Search stocks based on criteria" ticker={'stockScreener'} isTicker={false}/>
@@ -188,7 +192,7 @@ const StockScreener = () => {
                 <FormHelperText error={Boolean(error)}>{error}</FormHelperText>
             </Box>
             }
-            <Box
+            { !isLoading ? (<Box
                 m="40px 0 0 0"
                 height="75vh"
                 sx={{
@@ -218,7 +222,11 @@ const StockScreener = () => {
                 }}
             >
                 <DataGrid rows={stocks} columns={columns} onRowClick={rowClickEvent}/>
-            </Box>
+            </Box>) :(
+                <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"70vh"}}>
+                <CircularProgress sx={{color: colors.primary[300]}} />
+                </Box>
+                )}
         </Box>
     );
 };

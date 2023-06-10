@@ -120,7 +120,7 @@ def create_weighted_portfolio(money):
 @jwt_required
 def create_quantitative_momentum_portfolio(money):
     try:
-        response = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/priceChange")
+        response = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/priceChanges")
         df, residual_cash = PortfolioCreator.create_filtered_quantitative_momentum_dataframe(response.json(),
                                                                                              float(money))
         dto_return: list[MomentumStockDto] = []
@@ -167,7 +167,7 @@ def create_quantitative_value_portfolio(money):
 def create_quantitative_value_momentum_portfolio(money):
     try:
         value_response = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/ratios")
-        momentum_response = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/priceChange")
+        momentum_response = make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/priceChanges")
         df, residual_cash = PortfolioCreator.create_filtered_quantitative_value_momentum_dataframe(
             value_response.json(),
             momentum_response.json(), float(money))

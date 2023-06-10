@@ -1,13 +1,14 @@
-import {Box, useTheme} from "@mui/material";
+import {Box, CircularProgress, useTheme} from "@mui/material";
 import {DataGrid} from "@mui/x-data-grid";
 import {tokens} from "../../theme";
-import {useState, useEffect} from "react";
+import React, {useState, useEffect} from "react";
 import config from "../../config.json";
 import axios from "axios";
 import Topbar from "../global/Topbar";
 
 const TransactionHistory = () => {
     const [transactions, setTransactions] = useState([]);
+    const [isLoading, setIsLoading] = useState(true)
 
     const theme = useTheme();
     const colors = tokens(theme.palette.mode);
@@ -24,8 +25,10 @@ const TransactionHistory = () => {
             });
             setTransactions(response.data)
             console.log(response.data)
+            setIsLoading(false)
         } catch(error){
             console.log(error)
+            setIsLoading(false)
         }
     }
     const getRowClassName = (params) => {
@@ -76,7 +79,7 @@ const TransactionHistory = () => {
     return (
         <Box m="20px">
             <Topbar title="TRANSACTION HISTORY" subtitle="Get through the history of your transactions" ticker={'transactionHistory'} isTicker={false}/>
-            <Box
+            { !isLoading ? (<Box
                 height="75vh"
                 sx={{
                     "& .MuiDataGrid-root": {
@@ -110,7 +113,11 @@ const TransactionHistory = () => {
                 }}
             >
                 <DataGrid rows={transactions} columns={columns} getRowClassName={getRowClassName}/>
+            </Box>):(
+            <Box sx={{ display: 'flex', justifyContent:"center", alignItems:"center", height:"70vh"}}>
+                <CircularProgress sx={{color: colors.primary[300]}} />
             </Box>
+            )}
         </Box>
     );
 };
