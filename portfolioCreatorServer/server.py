@@ -6,7 +6,8 @@ import threading
 from urllib.parse import urlencode
 import jwt
 import requests
-from flask import make_response, request, jsonify
+from flask import make_response, request
+from flask_caching import Cache
 
 from JWTHelper import JWTHandler
 from portfolioCreatorServer.ColumnCreator import ColumnCreator
@@ -23,6 +24,8 @@ config = configparser.ConfigParser()
 config.read(os.path.join(os.getcwd(), "config.ini"))
 app = create_app()
 app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
+app.config['CACHE_TYPE'] = 'simple'
+cache = Cache(app)
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
 
 app.config["JWT"] = jwt_helper.create_jwt_token("PortfolioCreatorServer")
@@ -80,6 +83,7 @@ def jwt_required(func):
 
 
 @app.route('/api/portfolio/create/equalWeight/<money>', methods=['GET'])
+@cache.cached(timeout=1800)
 @jwt_required
 def create_equal_weight_portfolio(money):
     try:
@@ -98,6 +102,7 @@ def create_equal_weight_portfolio(money):
 
 
 @app.route('/api/portfolio/create/weighted/<money>', methods=['GET'])
+@cache.cached(timeout=1800)
 @jwt_required
 def create_weighted_portfolio(money):
     try:
@@ -117,6 +122,7 @@ def create_weighted_portfolio(money):
 
 
 @app.route('/api/portfolio/create/momentum/<money>', methods=['GET'])
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_momentum_portfolio(money):
     try:
@@ -137,6 +143,7 @@ def create_quantitative_momentum_portfolio(money):
 
 
 @app.route('/api/portfolio/create/value/<money>', methods=['GET'])
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_portfolio(money):
     try:
@@ -163,6 +170,7 @@ def create_quantitative_value_portfolio(money):
 
 
 @app.route('/api/portfolio/create/valueMomentum/<money>', methods=['GET'])
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_momentum_portfolio(money):
     try:

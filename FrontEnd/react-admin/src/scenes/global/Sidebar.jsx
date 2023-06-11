@@ -10,7 +10,6 @@ import LoginIcon from '@mui/icons-material/Login';
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import BarChartOutlinedIcon from "@mui/icons-material/BarChartOutlined";
 import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
 import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
@@ -142,14 +141,6 @@ function Sidebar({onToggleCollapse}) {
                             selected={selected}
                             setSelected={setSelected}
                         />}
-                        {isAuthenticated && <Item
-                            title="Dashboard"
-                            to="/"
-                            icon={<HomeOutlinedIcon/>}
-                            selected={selected}
-                            setSelected={setSelected}
-                        />}
-
                         <Typography
                             variant="h6"
                             color={colors.grey[300]}
@@ -209,13 +200,6 @@ function Sidebar({onToggleCollapse}) {
                             Charts
                         </Typography>}
                         {isAuthenticated && <Item
-                            title="Bar Chart"
-                            to="/bar"
-                            icon={<BarChartOutlinedIcon/>}
-                            selected={selected}
-                            setSelected={setSelected}
-                        />}
-                        {isAuthenticated && <Item
                             title="Pie Chart"
                             to="/pie"
                             icon={<PieChartOutlineOutlinedIcon/>}
@@ -223,7 +207,7 @@ function Sidebar({onToggleCollapse}) {
                             setSelected={setSelected}
                         />}
                         {isAuthenticated && <Item
-                            title="Line Chart"
+                            title="Performance Chart"
                             to="/line"
                             icon={<TimelineOutlinedIcon/>}
                             selected={selected}

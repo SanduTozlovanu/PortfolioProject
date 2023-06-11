@@ -17,6 +17,8 @@ import Header from "../../components/Header";
 import SettingsDropDown from "../../components/topbar/SettingsDropDown";
 import UserDropDown from "../../components/topbar/UserDropDown";
 import Authcontext from "../../components/AuthContext";
+import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
+import TimelineOutlinedIcon from "@mui/icons-material/TimelineOutlined";
 
 const Topbar = ({title, subtitle, ticker, isTicker}) => {
     const theme = useTheme();
@@ -33,6 +35,8 @@ const Topbar = ({title, subtitle, ticker, isTicker}) => {
     let isMomentum = (ticker === "momentum");
     let isValue = (ticker === "value");
     let isValueMomentum = (ticker === "valueMomentum");
+    let isPieChart = (ticker === "PieChart");
+    let PerformanceChart = (ticker === "PerformanceChart");
 
     return (
         <Box display="flex" justifyContent="space-between" p={2}>
@@ -49,6 +53,8 @@ const Topbar = ({title, subtitle, ticker, isTicker}) => {
                 {isMomentum && (<TrendingUpIcon style={{marginRight: "14px", marginTop: "12px", width: "50px", height: "50px"}}/>)}
                 {isValue && (<AnalyticsIcon style={{marginRight: "14px", marginTop: "12px", width: "50px", height: "50px"}}/>)}
                 {isValueMomentum && (<InsightsIcon style={{marginRight: "14px", marginTop: "12px", width: "50px", height: "50px"}}/>)}
+                {isPieChart && (<PieChartOutlineOutlinedIcon style={{marginRight: "14px", marginTop: "12px", width: "50px", height: "50px"}}/>)}
+                {PerformanceChart && (<TimelineOutlinedIcon style={{marginRight: "14px", marginTop: "12px", width: "50px", height: "50px"}}/>)}
                 <Header
                     title={title}
                     subtitle={subtitle}

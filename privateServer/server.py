@@ -7,6 +7,9 @@ import jwt
 import requests
 from flask import make_response, request, jsonify
 from flask_cors import cross_origin
+from flask_caching import Cache
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from pymongo import MongoClient
 from requests import Response
 
@@ -30,7 +33,12 @@ client = MongoClient(config.get("connection_strings", "MONGO_URL"))
 mongodb = client['portfolio']
 confirmations = mongodb['confirmations']
 app = create_app()
+limiter = Limiter(get_remote_address, app=app)
 app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
+app.config['RATELIMIT_ENABLED'] = True
+app.config['RATELIMIT_DEFAULT'] = '30 per minute'
+app.config['CACHE_TYPE'] = 'simple'
+cache = Cache(app)
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
 portfolio_analyser = PortfolioAnalyser()
 
@@ -110,6 +118,7 @@ def exception_catcher(func):
 
 
 def base_decorators(func):
+    @limiter.limit("30/minute")
     @cross_origin()
     @exception_catcher
     @functools.wraps(func)
@@ -290,6 +299,7 @@ def get_portfolio_stats():
 
 @app.route('/news', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=60)
 def get_latest_news():
     if "Authorization" in request.headers:
         email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -307,6 +317,7 @@ def get_latest_news():
 
 @app.route('/transactions', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=20)
 @jwt_required
 def get_transaction_history():
     transaction_dto_list: list[TransactionDto] = []
@@ -322,84 +333,98 @@ def get_transaction_history():
 
 @app.route('/stock/select', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_companies_select_data():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/select"))
 
 
 @app.route('/stock/details/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_details(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/details/" + company_ticker))
 
 
 @app.route('/stock/chart/price/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_price_chart(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/price/" + company_ticker))
 
 
 @app.route('/stock/chart/prediction/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_price_prediction(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/prediction/" + company_ticker))
 
 
 @app.route('/stock/chart/revenue/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_revenue_data(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/chart/revenue/" + company_ticker))
 
 
 @app.route('/stock/finances/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_finances(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/finances/" + company_ticker))
 
 
 @app.route('/stock/statement/last/<company_ticker>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def get_company_financial_statement(company_ticker):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/statement/last/" + company_ticker))
 
 
 @app.route('/stock/price/<company_list>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=20)
 def get_companies_price(company_list):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/price/" + company_list))
 
 
 @app.route('/stock/search/<company>', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def search_companies(company):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search/" + company))
 
 
 @app.route('/stock/search', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 def search_query():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search", request=request))
 
 
 @app.route('/stock/gainers', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=30)
 def get_top_gainers():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/gainers"))
 
 
 @app.route('/stock/losers', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=30)
 def get_top_losers():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/losers"))
 
 
 @app.route('/new/latest', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=30)
 def get_latest_new():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "new/latest"))
 
 
 @app.route('/portfolio/create/equalWeight', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 @jwt_required
 def create_equal_weight_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -410,6 +435,7 @@ def create_equal_weight_portfolio():
 
 @app.route('/portfolio/create/weighted', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 @jwt_required
 def create_weighted_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -420,6 +446,7 @@ def create_weighted_portfolio():
 
 @app.route('/portfolio/create/momentum', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -430,6 +457,7 @@ def create_quantitative_momentum_portfolio():
 
 @app.route('/portfolio/create/value', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -440,6 +468,7 @@ def create_quantitative_value_portfolio():
 
 @app.route('/portfolio/create/valueMomentum', methods=['GET'])
 @base_decorators
+@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])

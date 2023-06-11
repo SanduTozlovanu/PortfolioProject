@@ -1,9 +1,7 @@
 import React, {useState} from "react";
 import {Navigate, Route, Routes} from "react-router-dom";
 import Sidebar from "./scenes/global/Sidebar";
-import Dashboard from "./scenes/dashboard";
 import StockScreener from "./scenes/stockScreener";
-import Bar from "./scenes/bar";
 import Line from "./scenes/line";
 import Pie from "./scenes/pie";
 import {CssBaseline, ThemeProvider} from "@mui/material";
@@ -44,7 +42,7 @@ function App() {
                         <Sidebar onToggleCollapse={handleToggleCollapse}/>
                         <main className="content" style={{marginLeft: `${isCollapsed ? 80 : 270}px`}}>
                             <Routes>
-                                <Route path="/" element={isAuthenticated ? (<Dashboard/>) : (<Navigate to="/welcome" replace/>)}/>
+                                <Route path="/" element={isAuthenticated ? (<Navigate to="/myPortfolio" replace/>) : (<Navigate to="/welcome" replace/>)}/>
                                 <Route path="/myPortfolio" element={isAuthenticated ? (<MyPortfolio/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/transactions" element={isAuthenticated ? (<TransactionHistory/>) : (<Navigate to="/login" replace/>)}/>
                                 <Route path="/portfolioCreator" element={isAuthenticated ? (<PortfolioCreator/>) : (<Navigate to="/login" replace/>)}/>
@@ -55,7 +53,6 @@ function App() {
                                 <Route path="/confirm" element={<Confirm/>}/>
                                 <Route path="/login" element={<Login/>}/>
                                 <Route path="/stockScreener" element={<StockScreener/>}/>
-                                <Route path="/bar" element={<Bar/>}/>
                                 <Route path="/pie" element={<Pie/>}/>
                                 <Route path="/line" element={<Line/>}/>
                                 <Route path="/news" element={<News/>}/>
