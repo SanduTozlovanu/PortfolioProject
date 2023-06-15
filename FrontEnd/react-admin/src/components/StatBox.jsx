@@ -1,6 +1,5 @@
 import React from "react";
 import { Box, Typography, useTheme } from "@mui/material";
-import FlexBetween from "./FlexBetween";
 import {tokens} from "../theme";
 
 const StatBox = ({ title, value, icon }) => {
@@ -18,7 +17,7 @@ const StatBox = ({ title, value, icon }) => {
           backgroundColor={colors.blueAccent[800]}
           borderRadius="0.55rem"
       >
-        <FlexBetween>
+        <Box style={{  display: "flex", justifyContent: "space-between", alignItems: "center"}}>
           <Box>
             <Typography variant="h6" sx={{ color: colors.primary[100] }}>
               {title}
@@ -33,7 +32,7 @@ const StatBox = ({ title, value, icon }) => {
           </Box>
 
           {icon}
-        </FlexBetween>
+        </Box>
 
       </Box>
   );

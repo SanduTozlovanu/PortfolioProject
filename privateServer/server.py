@@ -5,9 +5,10 @@ from urllib.parse import urlencode
 
 import jwt
 import requests
+from flasgger import Swagger
 from flask import make_response, request, jsonify
-from flask_cors import cross_origin
 from flask_caching import Cache
+from flask_cors import cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from pymongo import MongoClient
@@ -39,6 +40,7 @@ app.config['RATELIMIT_ENABLED'] = True
 app.config['RATELIMIT_DEFAULT'] = '30 per minute'
 app.config['CACHE_TYPE'] = 'simple'
 cache = Cache(app)
+swagger = Swagger(app)
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])
 portfolio_analyser = PortfolioAnalyser()
 
@@ -128,9 +130,45 @@ def base_decorators(func):
     return wrapper
 
 
+@app.after_request
+def add_csp_header(response):
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    return response
+
+
 @app.route('/user/login', methods=['POST'])
 @base_decorators
 def login():
+    """
+    User Login endpoint
+    ---
+    parameters:
+        - name: name
+          in: body
+          type: string
+          required: true
+          example: Tozlovanu Sandu
+        - name: password
+          in: body
+          type: string
+          required: true
+          example: Password1234
+
+    responses:
+        200:
+            description: OK
+            schema:
+                type: object
+                properties:
+                    token:
+                        type: string
+                    name:
+                        type: string
+        401:
+            description: Invalid Credentials
+        403:
+            description: The account hasn't been confirmed yet
+    """
     user_email = request.json["email"]
     user_password = request.json['password']
     return UserController.login(user_email, user_password, jwt_helper)
@@ -139,6 +177,45 @@ def login():
 @app.route('/user/register', methods=['POST'])
 @base_decorators
 def register():
+    """
+    User Register endpoint
+    ---
+    parameters:
+        - name: email
+          in: body
+          type: string
+          required: true
+          example: tozlovanu.aleigo@gmail.com
+        - name: password
+          in: body
+          type: string
+          required: true
+          example: Password1234
+        - name: name
+          in: body
+          type: string
+          required: true
+          example: Tozlovanu Sandu
+        - name: money
+          in: body
+          type: int
+          required: true
+          example: 100000
+    responses:
+        200:
+            description: OK
+            schema:
+                type: object
+                properties:
+                    name:
+                        type: string
+                    money:
+                        type: string
+        400:
+            description: Invalid Data
+        409:
+            description: User already exists!
+    """
     user_email = request.json["email"]
     user_password = request.json['password']
     user_name = request.json['name']

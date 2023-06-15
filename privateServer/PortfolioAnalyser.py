@@ -27,14 +27,15 @@ class PortfolioAnalyser:
         return [transaction for transaction in transaction_list if
                             transaction.date <= self.dataframe_collector.last_date]
 
-    def create_chart_data(self, transaction_list: list[Transaction], creation_time: datetime, money: float):
-        df = self.dataframe_collector.get("AAPL", start=creation_time.strftime("%Y-%m-%d"), end=self.dataframe_collector.last_date)
+    def portfolio_value_tracking_algorithm(self, transaction_list: list[Transaction],
+                          creation_time: datetime, money: float):
+        df = self.dataframe_collector.get("AAPL", start=creation_time.strftime("%Y-%m-%d"),
+                                          end=self.dataframe_collector.last_date)
         df["Close"] = np.nan
         df = df.rename(columns={'Close': 'Value'})
         transaction_list = self.filter_transaction_list(transaction_list)
         hold_periods = PortfolioAnalyser.__generateHoldPeriods(transaction_list)
         PortfolioAnalyser.__initDataframeCash(df, transaction_list, money)
-        print(df)
 
         for hold_period in hold_periods:
             if hold_period.end_date is None:
@@ -44,8 +45,6 @@ class PortfolioAnalyser:
                                                    end=hold_period.end_date)
             if df2.shape[0] < 2 and df2['Date'][0].strftime("%Y-%m-%d") != hold_period.start_date.strftime(
                     "%Y-%m-%d"):
-                print(hold_period.start_date.strftime("%Y-%m-%d"))
-                print(df2['Date'][0])
                 continue
             if df2['Date'].iloc[-1] != df['Date'].iloc[-1]:
                 last_row = df2.iloc[-1]
@@ -64,7 +63,7 @@ class PortfolioAnalyser:
 
     def get_portfolio_stats(self, holdings_count: int, transaction_list: list[Transaction],
                             creation_time: datetime, money: float) -> PortfolioStatsDto:
-        df = self.create_chart_data(transaction_list, creation_time, money)
+        df = self.portfolio_value_tracking_algorithm(transaction_list, creation_time, money)
         current_value = df['Value'].iloc[-1]
         portfolio_return = (current_value - money) / money * 100
         snp_data = self.__get_snp_data(df['Date'].iloc[0])
@@ -102,19 +101,18 @@ class PortfolioAnalyser:
         covariance_matrix = np.cov(portfolio_returns, benchmark_returns)
         return covariance_matrix[0, 1] / covariance_matrix[1, 1]
 
+    # noinspection PyTypeChecker
     @staticmethod
-    def __generateTickerHoldPeriods(transactions: list[Transaction]) -> list[
-        HoldPeriod]:  # lets suppose that transactions are sorted by date
+    def __generateTickerHoldPeriods(transactions: list[Transaction]) -> list[HoldPeriod]:
         hold_periods_to_return: list[HoldPeriod] = []
-        if not transactions[0].is_buy:
-            print("Wrong data, there should be a buy first !")
         ticker: str = transactions[0].ticker
         current_quantity: int = transactions[0].quantity
         last_date: datetime = transactions[0].date
         transactions.remove(transactions[0])
         for transaction in transactions:
             hold_periods_to_return.append(
-                HoldPeriod(ticker=ticker, quantity=current_quantity, start_date=last_date, end_date=transaction.date))
+                HoldPeriod(ticker=ticker, quantity=current_quantity,
+                           start_date=last_date, end_date=transaction.date))
             last_date = transaction.date
             if transaction.is_buy:
                 current_quantity += transaction.quantity
@@ -122,7 +120,8 @@ class PortfolioAnalyser:
                 current_quantity -= transaction.quantity
         if current_quantity != 0:
             hold_periods_to_return.append(
-                HoldPeriod(ticker=ticker, quantity=current_quantity, start_date=last_date, end_date=None))
+                HoldPeriod(ticker=ticker, quantity=current_quantity, start_date=last_date,
+                           end_date=None))
 
         return hold_periods_to_return
 

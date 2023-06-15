@@ -1,13 +1,12 @@
 import {useContext, useState} from "react";
 import {Menu, MenuItem, ProSidebar} from "react-pro-sidebar";
-import {Box, IconButton, Typography, useTheme} from "@mui/material";
+import {Box, IconButton, Typography, Avatar, useTheme} from "@mui/material";
 import {Link} from "react-router-dom";
 import "react-pro-sidebar/dist/css/styles.css";
 import {tokens} from "../../theme";
 import AccessibilityIcon from '@mui/icons-material/Accessibility';
 import AppRegistrationIcon from '@mui/icons-material/AppRegistration';
 import LoginIcon from '@mui/icons-material/Login';
-import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import NewspaperIcon from '@mui/icons-material/Newspaper';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import PieChartOutlineOutlinedIcon from "@mui/icons-material/PieChartOutlineOutlined";
@@ -88,8 +87,9 @@ function Sidebar({onToggleCollapse}) {
                                 alignItems="center"
                                 ml="15px"
                             >
+                                <Avatar variant="square" src="/favicon.ico"/>
                                 <Typography variant="h3"
-                                            color={colors.grey[100]}>{isAuthenticated ? 'User' : 'Unlogged User'}
+                                            color={colors.grey[100]}>PortfoPal
                                 </Typography>
                                 <IconButton onClick={() => {
                                     setIsCollapsed(!isCollapsed)

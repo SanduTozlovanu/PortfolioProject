@@ -13,7 +13,7 @@ class ChartController:
         transactions: list[Transaction] = Transaction.query.filter(Transaction.portfolio_id == portfolio.id).order_by(
             Transaction.date.asc()).all()
         user: User = User.query.filter(User.email == email).first()
-        df = portfolio_analyser.create_chart_data(transactions, user.created_on, portfolio.initial_money)
+        df = portfolio_analyser.portfolio_value_tracking_algorithm(transactions, user.created_on, portfolio.initial_money)
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['Date'], y=df['Value'], name="Stock Value"))
         fig.layout.update(xaxis_rangeslider_visible=True, showlegend=False)
