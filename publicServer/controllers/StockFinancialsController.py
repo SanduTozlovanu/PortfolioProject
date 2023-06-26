@@ -52,7 +52,7 @@ class StockFinancialsController:
     @staticmethod
     def receive_companies_ratios() -> list[StockRatiosDto]:
         stock_ratios_dtos: list[StockRatiosDto] = []
-        snp_list: list[Company] = db.query(Company).all()
+        snp_list: list[Company] = db.query(Company).filter(Company.sector != "Energy").all()
         for company in snp_list:
             company_ratios: Ratios = db.query(Ratios).filter(
                 Ratios.ticker == company.ticker).first()

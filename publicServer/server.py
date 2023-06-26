@@ -96,7 +96,6 @@ def exception_catcher(func):
 
 
 def base_decorators(func):
-    @jwt_required
     @exception_catcher
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -210,7 +209,6 @@ def get_search_stocks(company):
 
 @app.route('/api/stock/search', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=60)
 def search_query():
     companies_to_return = SearchController.search_query(urlencode(request.args))
     return make_response(jsonify([company_dto.__dict__ for company_dto in companies_to_return]), 200)

@@ -50,7 +50,7 @@ class StockPriceController:
     @staticmethod
     def receive_all_tickers_price_change() -> list[StockPriceChangeDto]:
         response_list: list[StockPriceChangeDto] = []
-        company_list: list[Company] = db.query(Company).all()
+        company_list: list[Company] = db.query(Company).filter(Company.sector != "Energy").all()
         for company in company_list:
             stockPrice: StockPrice = db.query(StockPrice).filter(
                 StockPrice.ticker == company.ticker).first()

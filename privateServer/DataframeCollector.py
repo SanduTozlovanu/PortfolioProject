@@ -8,7 +8,7 @@ from privateServer.app import db
 from privateServer.app.models import StockPriceDataframe
 from datetime import datetime, date
 
-START_DATE = "2023-01-01"
+START_DATE = "2022-01-01"
 
 
 class DataframeCollector:

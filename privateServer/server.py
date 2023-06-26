@@ -466,14 +466,13 @@ def get_companies_price(company_list):
 
 @app.route('/stock/search/<company>', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
+@cache.cached(timeout=60)
 def search_companies(company):
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search/" + company))
 
 
 @app.route('/stock/search', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 def search_query():
     return return_response(make_request("GET", BASE_PUBLIC_ENDPOINT + "stock/search", request=request))
 
@@ -501,7 +500,6 @@ def get_latest_new():
 
 @app.route('/portfolio/create/equalWeight', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 @jwt_required
 def create_equal_weight_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -512,7 +510,6 @@ def create_equal_weight_portfolio():
 
 @app.route('/portfolio/create/weighted', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 @jwt_required
 def create_weighted_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -523,7 +520,6 @@ def create_weighted_portfolio():
 
 @app.route('/portfolio/create/momentum', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -534,7 +530,6 @@ def create_quantitative_momentum_portfolio():
 
 @app.route('/portfolio/create/value', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])
@@ -545,7 +540,6 @@ def create_quantitative_value_portfolio():
 
 @app.route('/portfolio/create/valueMomentum', methods=['GET'])
 @base_decorators
-@cache.cached(timeout=1800)
 @jwt_required
 def create_quantitative_value_momentum_portfolio():
     email = jwt_helper.get_mail_from_jwt(request.headers["Authorization"])

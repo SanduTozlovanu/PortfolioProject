@@ -18,7 +18,7 @@ class StockProfileController:
 
     @staticmethod
     def receive_stocks_basedata() -> list[StockBasedataDto]:
-        companies: list[CompanyProfile] = db.query(CompanyProfile).all()
+        companies: list[CompanyProfile] = db.query(CompanyProfile).join(Company).filter(Company.sector != "Energy").all()
         returned_companies: list[StockBasedataDto] = []
         for company in companies:
             stock_price: StockPrice = db.query(StockPrice).filter(
