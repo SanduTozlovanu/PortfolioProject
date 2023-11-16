@@ -9,4 +9,7 @@ config.read(CONFIG_DIR + CONFIG_FILE_NAME)
 
 API_KEY = config.get("API", "API_KEY")
 SECRET_KEY = config.get("SECRETS", "SECRET_KEY")
+EMAIL = config.get("EMAIL", "EMAIL")
+EMAIL_PASSWORD = config.get("EMAIL", "EMAIL_PASSWORD")
+SMTP_SERVER = config.get("EMAIL", "SMTP_SERVER")
 KEY_URL = "apikey=" + API_KEY

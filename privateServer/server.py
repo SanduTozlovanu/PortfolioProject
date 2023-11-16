@@ -185,7 +185,7 @@ def register():
           in: body
           type: string
           required: true
-          example: tozlovanu.aleigo@gmail.com
+          example: toz.ale@gmail.com
         - name: password
           in: body
           type: string

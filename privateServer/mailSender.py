@@ -3,14 +3,16 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from platform import python_version
 
+from publicServer.config.definitions import EMAIL, EMAIL_PASSWORD, SMTP_SERVER
+
 
 def send_mail(mail: str, number: int):
-    server = 'smtp.mail.ru'
-    user = 'tozlovanu.sandu@mail.ru'
-    password = 'augiqkmjXVNnijWTYa07'
+    server = SMTP_SERVER
+    user = EMAIL
+    password = EMAIL_PASSWORD
 
     recipients = [mail]
-    sender = 'tozlovanu.sandu@mail.ru'
+    sender = EMAIL
     subject = 'Portfolio Confirmation Code'
     text = f"Confirmation code: {number}"
     html = '<html><head></head><body><p>' + text + '</p></body></html>'
