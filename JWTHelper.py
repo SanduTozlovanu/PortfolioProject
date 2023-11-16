@@ -23,7 +23,7 @@ class JWTHandler:
 
     def create_jwt_token(self, email: str) -> str:
         # set expiration time to 1 hour from now
-        expiration_time = datetime.utcnow() + timedelta(hours=24)
+        expiration_time = datetime.utcnow() + timedelta(days=24)
         payload = {'email': email, 'exp': expiration_time}
         token = jwt.encode(payload, self.secret_key, algorithm='HS256')
         return token

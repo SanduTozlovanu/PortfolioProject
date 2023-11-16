@@ -23,13 +23,16 @@ class UserController:
         return {"token": jwt_helper.create_jwt_token(user_email),  "name": user.name}
 
     @staticmethod
-    def register(user_email: str, user_password: str, user_name: str, money, confirmations) -> User:
+    def register(user_email: str, user_password: str, user_name: str, money, confirmations=None) -> User:
         try:
             created_on = datetime.now()
             if created_on.weekday() >= 5:
                 created_on -= timedelta(days=2)
             else:
                 created_on -= timedelta(days=1)
+            new_user = User(email=user_email, password=user_password, name=user_name, type="user", status=True,
+                            created_on=created_on)
+            ''' Email confirmation functionality disabled 
             new_user = User(email=user_email, password=user_password, name=user_name, type="user", status=False,
                             created_on=created_on)
             random_number = randint(10000, 99999)
@@ -38,6 +41,7 @@ class UserController:
         except:
             raise BadRequestException("Wrong Data")
         try:
+            '''
             db.session.add(new_user)
             db.session.commit()
             inserted_user = User.query.filter(User.email == new_user.email).first()
@@ -69,13 +73,13 @@ class UserController:
         db.session.commit()
 
     @staticmethod
-    def confirm_resend(user_email, confirmations):
+    def confirm_resend(user_email, confirmations=None):
         random_number = randint(10000, 99999)
         confirmations.insert_one({'code': random_number, "email": user_email})
         mailSender.send_mail(user_email, random_number)
 
     @staticmethod
-    def confirm(user_email: str, user_code: int, confirmations):
+    def confirm(user_email: str, user_code: int, confirmations=None):
         found_code = False
         found_email = False
         for confirmation in confirmations.find({'email': user_email}):

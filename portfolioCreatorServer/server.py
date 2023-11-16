@@ -21,9 +21,10 @@ from portfolioCreatorServer.PortfolioCreator import PortfolioCreator
 from privateServer.app import create_app
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.getcwd(), "config.ini"))
+path = os.path.join(os.getcwd(), "..", "publicServer", "config", "config.ini")
+config.read(path)
 app = create_app()
-app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
+app.config["SECRET_KEY"] = config.get("SECRETS", "SECRET_KEY")
 app.config['CACHE_TYPE'] = 'simple'
 cache = Cache(app)
 jwt_helper = JWTHandler(app.config["SECRET_KEY"])

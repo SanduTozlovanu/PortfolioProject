@@ -11,7 +11,6 @@ from flask_caching import Cache
 from flask_cors import cross_origin
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from pymongo import MongoClient
 from requests import Response
 
 from JWTHelper import JWTHandler
@@ -29,13 +28,16 @@ from privateServer.controllers.PortfolioStatsController import PortfolioStatsCon
 from privateServer.controllers.UserController import UserController
 
 config = configparser.ConfigParser()
-config.read(os.path.join(os.getcwd(), "config.ini"))
+path = os.path.join(os.getcwd(), "..", "publicServer", "config", "config.ini")
+config.read(path)
+''' This is disable because email verification feature is disabled
 client = MongoClient(config.get("connection_strings", "MONGO_URL"))
 mongodb = client['portfolio']
 confirmations = mongodb['confirmations']
+'''
 app = create_app()
 limiter = Limiter(get_remote_address, app=app)
-app.config["SECRET_KEY"] = config.get("keys", "SECRET_KEY")
+app.config["SECRET_KEY"] = config.get("SECRETS", "SECRET_KEY")
 app.config['RATELIMIT_ENABLED'] = True
 app.config['RATELIMIT_DEFAULT'] = '30 per minute'
 app.config['CACHE_TYPE'] = 'simple'
@@ -220,7 +222,7 @@ def register():
     user_password = request.json['password']
     user_name = request.json['name']
     money = request.json['money']
-    response = UserController.register(user_email, user_password, user_name, money, confirmations)
+    response = UserController.register(user_email, user_password, user_name, money)
     return make_response(response.as_dict(), 201)
 
 
@@ -236,7 +238,7 @@ def reset():
 @app.route('/user/confirm/resend', methods=['POST'])
 @base_decorators
 def confirm_resend():
-    UserController.confirm_resend(request.json["email"], confirmations)
+    UserController.confirm_resend(request.json["email"])
     return make_response("Successfully sent", 200)
 
 
@@ -245,7 +247,7 @@ def confirm_resend():
 def confirm():
     user_email = request.json["email"]
     user_code = int(request.json['code'])
-    UserController.confirm(user_email, user_code, confirmations)
+    UserController.confirm(user_email, user_code)
     return make_response("Succesfully confirmed", 200)
 
 

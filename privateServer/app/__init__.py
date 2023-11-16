@@ -20,6 +20,6 @@ def create_app():
 
 def create_database(app):
     global db
-    if not path.exists('app/' + DB_NAME):
+    if not path.exists('app/' + DB_NAME) or path.getsize('app/' + DB_NAME) < 10000:
         db.create_all(app=app)
         print('Created database!')

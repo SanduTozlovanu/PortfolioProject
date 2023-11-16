@@ -65,7 +65,7 @@ const Register = () => {
                     money: portfolioBalance
                 });
             localStorage.setItem("confirm", JSON.stringify(response.data));
-            navigate("/confirm");
+            navigate("/login");
         } catch (error) {
             console.log(error)
             setLoading(false)
